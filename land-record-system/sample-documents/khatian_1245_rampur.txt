@@ -1,0 +1,11 @@
+Name of Tenant: Abdul Rahman
+Father's Name: Shri M. Rahman
+Khatian No: 1245
+Plot No: 782
+Area: 2.50 Acre
+Village: Rampur
+Tehsil: Raninagar
+District: Burdwan
+State: West Bengal
+Land Type: Agricultural
+Mutation: Case No. 1145/2024 dated 12.03.2024

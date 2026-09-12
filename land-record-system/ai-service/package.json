@@ -1,0 +1,10 @@
+{
+  "name": "lrs-ai-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Python FastAPI AI microservice (OCR + extraction + validation)",
+  "scripts": {
+    "dev": "python -m uvicorn app:app --reload --port 8001",
+    "start": "python -m uvicorn app:app --port 8001"
+  }
+}

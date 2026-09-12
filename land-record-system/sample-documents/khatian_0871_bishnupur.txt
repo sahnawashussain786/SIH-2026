@@ -1,0 +1,8 @@
+Name of Tenant: Sita Devi
+Khatian No: 871
+Plot No: 312
+Area: 1.20 acre
+Village: Bishnupur
+District: Nadia
+State: West Bengal
+Land Type: Agricultural

@@ -1,0 +1,18 @@
+# Python AI service dependencies
+# (pins target Python 3.10–3.13; on Python 3.14+ install without version pins:
+#   pip install fastapi "uvicorn[standard]" python-multipart pydantic python-dotenv pytesseract Pillow opencv-python-headless numpy langdetect
+# )
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+python-dotenv==1.0.1
+
+# OCR / vision (optional — service runs without them)
+pytesseract==0.3.13
+Pillow==11.1.0
+opencv-python-headless==4.10.0.84
+numpy==2.2.1
+
+# NLP (optional)
+langdetect==1.0.9

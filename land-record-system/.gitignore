@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Builds
+client/dist/
+server/public/
+
+# Environment
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+**/.env
+**/.env.local
+
+# Uploads & AI runtime files
+server/uploads/*
+!server/uploads/.gitkeep
+server/data/
+server/scripts/*.out
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+ai-service/.venv/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
