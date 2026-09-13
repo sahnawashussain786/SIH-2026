@@ -1,4 +1,5 @@
 """OCR + handwriting recognition using Tesseract with automatic fallbacks."""
+
 from __future__ import annotations
 
 import shutil
@@ -8,6 +9,7 @@ from PIL import Image
 
 try:
     from langdetect import detect_langs, LangDetectException
+
     LANGDETECT_OK = True
 except ImportError:  # pragma: no cover
     LANGDETECT_OK = False
@@ -15,6 +17,7 @@ except ImportError:  # pragma: no cover
 
 def _resolve_tesseract() -> str | None:
     import os
+
     cmd = os.getenv("TESSERACT_CMD", "").strip()
     if cmd:
         return cmd
@@ -60,16 +63,22 @@ def ocr_image(data: bytes, langs: str = "eng") -> tuple[str, float, list[str]]:
     """Run Tesseract OCR. Returns (text, mean_confidence, warnings)."""
     warnings: list[str] = []
     if not TESSERACT_AVAILABLE:
-        warnings.append("Tesseract binary not available — OCR skipped, using fallback extraction.")
+        warnings.append(
+            "Tesseract binary not available — OCR skipped, using fallback extraction."
+        )
         return "", 0.0, warnings
 
     img = Image.open(__import__("io").BytesIO(data))
     langs_avail = available_languages()
     want = [l for l in langs.split("+") if l]
-    usable = [l for l in want if l in langs_avail] or (["eng"] if "eng" in langs_avail else [])
+    usable = [l for l in want if l in langs_avail] or (
+        ["eng"] if "eng" in langs_avail else []
+    )
 
     try:
-        data_out = pytesseract.image_to_data(img, lang="+".join(usable) or "eng", output_type=pytesseract.Output.DICT)
+        data_out = pytesseract.image_to_data(
+            img, lang="+".join(usable) or "eng", output_type=pytesseract.Output.DICT
+        )
     except pytesseract.TesseractError as e:
         warnings.append(f"Tesseract error: {e}. Retrying with default language.")
         data_out = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
@@ -80,7 +89,11 @@ def ocr_image(data: bytes, langs: str = "eng") -> tuple[str, float, list[str]]:
     n = len(data_out["text"])
     for i in range(n):
         word = data_out["text"][i].strip()
-        conf = float(data_out["conf"][i]) if data_out["conf"][i] not in ("-1", "-1.0") else -1
+        conf = (
+            float(data_out["conf"][i])
+            if data_out["conf"][i] not in ("-1", "-1.0")
+            else -1
+        )
         if word and conf >= 0:
             words.append(word)
             confs.append(conf)
@@ -91,7 +104,11 @@ def ocr_image(data: bytes, langs: str = "eng") -> tuple[str, float, list[str]]:
         word = data_out["text"][i].strip()
         if not word:
             continue
-        key = (data_out["block_num"][i], data_out["par_num"][i], data_out["line_num"][i])
+        key = (
+            data_out["block_num"][i],
+            data_out["par_num"][i],
+            data_out["line_num"][i],
+        )
         lines.setdefault(key, []).append(word)
     text = "\n".join(" ".join(ws) for ws in lines.values())
 

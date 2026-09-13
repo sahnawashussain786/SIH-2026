@@ -1,4 +1,5 @@
 """Business-rule validation and duplicate detection."""
+
 from __future__ import annotations
 
 import re
@@ -6,13 +7,43 @@ import re
 REQUIRED = ["ownerName", "khatianNumber", "plotNumber", "area", "village", "district"]
 
 KNOWN_DISTRICTS = {
-    "burdwan", "bardhaman", "nadia", "murshidabad", "birbhum", "bankura", "purulia",
-    "hooghly", "howrah", "24 parganas", "muzaffarpur", "patna", "gaya", "darbhanga",
-    "kishanganj", "rewa", "sitapur", "lucknow", "kanpur", "varanasi", "allahabad",
-    "indore", "bhopal", "jabalpur", "ranchi", "rampur",
+    "burdwan",
+    "bardhaman",
+    "nadia",
+    "murshidabad",
+    "birbhum",
+    "bankura",
+    "purulia",
+    "hooghly",
+    "howrah",
+    "24 parganas",
+    "muzaffarpur",
+    "patna",
+    "gaya",
+    "darbhanga",
+    "kishanganj",
+    "rewa",
+    "sitapur",
+    "lucknow",
+    "kanpur",
+    "varanasi",
+    "allahabad",
+    "indore",
+    "bhopal",
+    "jabalpur",
+    "ranchi",
+    "rampur",
 }
 
-KNOWN_LAND_TYPES = {"agricultural", "residential", "commercial", "wasteland", "homestead", "pond", "orchard"}
+KNOWN_LAND_TYPES = {
+    "agricultural",
+    "residential",
+    "commercial",
+    "wasteland",
+    "homestead",
+    "pond",
+    "orchard",
+}
 
 
 def run_validation(extracted: dict[str, str]) -> dict[str, list[str]]:
@@ -44,11 +75,15 @@ def run_validation(extracted: dict[str, str]) -> dict[str, list[str]]:
 
     district = extracted.get("district", "").lower().strip()
     if district and district not in KNOWN_DISTRICTS:
-        warnings.append(f'District "{extracted["district"]}" is not in the known districts list — please verify')
+        warnings.append(
+            f'District "{extracted["district"]}" is not in the known districts list — please verify'
+        )
 
     land_type = extracted.get("landType", "").lower().strip()
     if land_type and land_type not in KNOWN_LAND_TYPES:
-        warnings.append(f'Land type "{extracted["landType"]}" is unusual — please verify')
+        warnings.append(
+            f'Land type "{extracted["landType"]}" is unusual — please verify'
+        )
 
     return {"errors": errors, "warnings": warnings}
 

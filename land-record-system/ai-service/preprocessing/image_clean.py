@@ -2,6 +2,7 @@
 
 If OpenCV is not installed, falls back to Pillow-only operations.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -9,6 +10,7 @@ from PIL import Image, ImageFilter
 
 try:
     import cv2
+
     CV2_OK = True
 except ImportError:  # pragma: no cover
     CV2_OK = False
@@ -55,13 +57,21 @@ def preprocess(data: bytes) -> tuple[bytes, list[str]]:
         if angle < -45:
             angle = 90 + angle
         if abs(angle) > 0.5 and abs(angle) < 15:
-            (h2, w2) = gray.shape[:2]
+            h2, w2 = gray.shape[:2]
             M = cv2.getRotationMatrix2D((w2 // 2, h2 // 2), angle, 1.0)
-            gray = cv2.warpAffine(gray, M, (w2, h2), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+            gray = cv2.warpAffine(
+                gray,
+                M,
+                (w2, h2),
+                flags=cv2.INTER_CUBIC,
+                borderMode=cv2.BORDER_REPLICATE,
+            )
             steps.append(f"deskew({angle:.1f}°)")
 
     # 5. adaptive threshold — evens out stained/uneven paper
-    gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15)
+    gray = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15
+    )
     steps.append("adaptive-threshold")
 
     ok, buf = cv2.imencode(".png", gray)

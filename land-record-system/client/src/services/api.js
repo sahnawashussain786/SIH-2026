@@ -19,4 +19,9 @@ api.interceptors.response.use(
   }
 );
 
-export const errMsg = (err) => err?.response?.data?.message || err.message || 'Something went wrong';
+export const errMsg = (err) => {
+  if (!err.response) {
+    return 'Cannot reach the API server (http://localhost:5000). Start it with "npm run dev:server" — or run everything with "npm run dev:all" — then try again.';
+  }
+  return err.response.data?.message || err.message || 'Something went wrong';
+};

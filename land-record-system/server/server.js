@@ -61,22 +61,36 @@ app.use(notFound);
 app.use(errorHandler);
 
 /* ---------- boot ---------- */
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 5000;
 
 connectDB()
   .then(async (mode) => {
-    if (mode === 'memory') {
-      console.log('[api] Demo mode: seeding in-memory database with sample data…');
-      try {
+    // Auto-seed whenever the database has no users yet (fresh DB of any kind),
+    // so a clean install never ends up with un-loggable accounts.
+    try {
+      const User = (await import('./models/User.js')).default;
+      const userCount = await User.countDocuments();
+      if (userCount === 0) {
+        console.log(`[api] Database empty (${mode}) — seeding demo data…`);
         await seedDatabase();
-        console.log('[api] Demo data ready — log in with officer@lrs.gov.in / Officer@123');
-      } catch (err) {
-        console.error('[api] Auto-seed failed:', err.message);
       }
+      console.log('[api] Ready — log in with officer@lrs.gov.in / Officer@123');
+    } catch (err) {
+      console.error('[api] Auto-seed failed:', err.message);
     }
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[api] Land Record API listening on http://localhost:${PORT}`);
       console.log(`[api] AI service: ${process.env.AI_SERVICE_URL || 'http://localhost:8001'} (fallback extraction ${process.env.AI_FALLBACK !== 'false' ? 'enabled' : 'disabled'})`);
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n[api] Port ${PORT} is already in use — another copy of this API is probably already running.`);
+        console.error(`[api] Check it:   open http://localhost:${PORT}/api/health`);
+        console.error(`[api] Free it:    close the other terminal running the server, or run:  npx kill-port ${PORT}`);
+        console.error(`[api] Or use another port:  PORT=5001 npm run dev`);
+        process.exit(1);
+      }
+      throw err;
     });
   })
   .catch((err) => {
