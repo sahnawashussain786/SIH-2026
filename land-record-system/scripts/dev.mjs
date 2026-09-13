@@ -72,8 +72,22 @@ const SERVICES = [
 
 /* ---------------- helpers ---------------- */
 
+// Try to BIND the port — succeeds only when it is genuinely free. Unlike a
+// connect() probe this also catches wedged/zombie listeners that accept no
+// connections (exactly the kind that once hid on port 8001).
 function portBusy(port) {
-  // Vite and friends may bind IPv4, IPv6 or both — probe both stacks.
+  const tryBind = (host) => new Promise((resolve) => {
+    const s = net.createServer();
+    s.once('error', () => resolve(true)); // bind refused → someone holds it
+    s.once('listening', () => s.close(() => resolve(false)));
+    try { s.listen({ port, host }); } catch { resolve(true); }
+  });
+  return (async () => (await tryBind('127.0.0.1')) || (await tryBind('::1')))();
+}
+
+// Non-invasive readiness probe: does something ACCEPT connections here?
+// (Used after start — a bind probe here could race the service itself.)
+function serviceResponding(port) {
   const probe = (host) => new Promise((resolve) => {
     const s = net.connect({ port, host, timeout: 700 });
     s.on('connect', () => { s.destroy(); resolve(true); });
@@ -87,7 +101,7 @@ function waitForPort(port, timeoutMs = 30000) {
   const start = Date.now();
   return new Promise((resolve) => {
     const t = setInterval(async () => {
-      if (await portBusy(port)) { clearInterval(t); resolve(true); }
+      if (await serviceResponding(port)) { clearInterval(t); resolve(true); }
       else if (Date.now() - start > timeoutMs) { clearInterval(t); resolve(false); }
     }, 500);
   });

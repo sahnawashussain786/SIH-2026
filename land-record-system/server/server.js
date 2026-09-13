@@ -7,7 +7,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { connectDB } from './config/db.js';
+import { connectDB, stopDB } from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { UPLOAD_DIR } from './middleware/upload.js';
 
@@ -98,5 +98,18 @@ connectDB()
     console.error('[api] Start MongoDB locally or set MONGO_URI in server/.env');
     process.exit(1);
   });
+
+/* ---------- clean shutdown: free the DB, never leave mongod zombies ---------- */
+let closing = false;
+async function gracefulExit(code) {
+  if (closing) return;
+  closing = true;
+  try { await stopDB(); } catch { /* best effort */ }
+  process.exit(code);
+}
+process.on('SIGINT', () => gracefulExit(0));
+process.on('SIGTERM', () => gracefulExit(0));
+process.on('SIGBREAK', () => gracefulExit(0)); // Windows Ctrl+Break / launcher tree-kill
+process.on('exit', () => { try { stopDB(); } catch { /* sync best effort */ } });
 
 export default app;
