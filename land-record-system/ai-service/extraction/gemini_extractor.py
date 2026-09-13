@@ -27,7 +27,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
-GEMINI_MODEL = (os.getenv("GEMINI_MODEL") or "gemini-2.0-flash").strip()
+# "gemini-flash-latest" is a stable alias that always tracks the current Flash
+# model — individual versions (e.g. gemini-2.0-flash) get retired over time.
+GEMINI_MODEL = (os.getenv("GEMINI_MODEL") or "gemini-flash-latest").strip()
 
 # Populated lazily so the service still boots without the SDK installed.
 _genai = None
