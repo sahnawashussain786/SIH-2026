@@ -21,15 +21,18 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
-# "gemini-flash-latest" is a stable alias that always tracks the current Flash
-# model — individual versions (e.g. gemini-2.0-flash) get retired over time.
-GEMINI_MODEL = (os.getenv("GEMINI_MODEL") or "gemini-flash-latest").strip()
+# Preferred model for new keys (Sep 2026). The _call() fallback chain also tries
+# well-known alternates automatically, so a retired pin never hard-breaks us.
+GEMINI_MODEL = (os.getenv("GEMINI_MODEL") or "gemini-3.6-flash").strip()
+FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash"]
+_ACTIVE_MODEL = GEMINI_MODEL
 
 # Populated lazily so the service still boots without the SDK installed.
 _genai = None
@@ -70,7 +73,7 @@ def gemini_available() -> bool:
 def gemini_status() -> str:
     """Human-readable status for /health."""
     if GEMINI_API_KEY and gemini_available():
-        return f"gemini ({GEMINI_MODEL})"
+        return f"gemini ({globals().get('_ACTIVE_MODEL', GEMINI_MODEL)})"
     if GEMINI_API_KEY and _INIT_ERROR:
         return f"gemini error: {_INIT_ERROR}"
     return "gemini not configured"
@@ -89,7 +92,7 @@ Rules:
   (acre, hectare, bigha, katha, decimal, guntha, sq_yard, sq_feet).
 - Preserve Indic script text as-is (Hindi/Bengali etc.), do not transliterate.
 - "confidence" is your 0-100 certainty for each extracted field.
-- If the document is unreadable, return {"confidence": {}} and put the reason in "notes".
+- If the document is unreadable, return an empty "confidence" object and put the reason in "notes".
 
 Also return a top-level "notes" key (string) with anything anomalous (torn page,
 stamps overlapping text, missing sections)."""
@@ -109,7 +112,8 @@ _MIME = {
 
 
 def _prompt_with_fields() -> str:
-    return PROMPT.format(field_list=json.dumps(FIELDS, indent=2))
+    # .replace() instead of .format(): the prompt itself contains literal JSON braces
+    return PROMPT.replace("{field_list}", json.dumps(FIELDS, indent=2))
 
 
 def _parse_json(raw: str) -> dict:
@@ -130,15 +134,56 @@ def _parse_json(raw: str) -> dict:
     return {}
 
 
+def _is_transient(err: Exception) -> bool:
+    """DNS blips / connection resets — worth retrying with backoff."""
+    msg = str(err).lower()
+    return any(t in msg for t in ("getaddrinfo", "temporary failure", "connection", "timed out", "timeout"))
+
+
 def _call(parts: list, temperature: float = 0.0) -> str:
+    """Call Gemini with retries for transient network errors, walking a
+    fallback chain if a model version has been retired.
+
+    Google retires old model versions periodically; GEMINI_MODEL from .env is
+    tried first, then well-known current models, so an old pin never hard-breaks
+    the pipeline (it just logs which model actually answered).
+    """
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            return _call_once(parts, temperature)
+        except Exception as e:
+            last_err = e
+            if attempt < 2 and _is_transient(e):
+                time.sleep(1.5 * (attempt + 1))  # 1.5s, 3s
+                continue
+            raise
+    raise last_err  # type: ignore[misc]
+
+
+def _call_once(parts: list, temperature: float = 0.0) -> str:
     if hasattr(_MODEL, "models"):  # new google-genai SDK
-        resp = _MODEL.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[{"role": "user", "parts": parts}],
-            config={"temperature": temperature},
-        )
-    else:  # legacy google.generativeai
-        resp = _MODEL.generate_content(parts, generation_config={"temperature": temperature})
+        candidates = [GEMINI_MODEL] + [m for m in FALLBACK_MODELS if m != GEMINI_MODEL]
+        last_err: Exception | None = None
+        for model in candidates:
+            try:
+                resp = _MODEL.models.generate_content(
+                    model=model,
+                    contents=[{"role": "user", "parts": parts}],
+                    config={"temperature": temperature},
+                )
+                globals()["_ACTIVE_MODEL"] = model
+                return resp.text or ""
+            except Exception as e:
+                last_err = e
+                msg = str(e)
+                # only fall through on model-availability problems
+                if "404" not in msg and "NOT_FOUND" not in msg and "no longer available" not in msg.lower():
+                    raise
+        raise last_err  # type: ignore[misc]
+    # legacy google.generativeai SDK
+    resp = _MODEL.generate_content(parts, generation_config={"temperature": temperature})
+    globals()["_ACTIVE_MODEL"] = GEMINI_MODEL
     return resp.text or ""
 
 
