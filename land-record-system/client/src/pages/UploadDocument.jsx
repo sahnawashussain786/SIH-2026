@@ -152,10 +152,30 @@ export default function UploadDocument() {
                 onChange={(e) => setMeta({ ...meta, language: e.target.value })}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
               >
-                <option value="auto">Auto Detect</option>
+                <option value="auto">Auto Detect (all Indian languages)</option>
                 <option value="eng">English</option>
-                <option value="hin">Hindi</option>
-                <option value="ben">Bengali</option>
+                <option value="hin">हिन्दी — Hindi</option>
+                <option value="ben">বাংলা — Bengali</option>
+                <option value="mar">मराठी — Marathi</option>
+                <option value="tel">తెలుగు — Telugu</option>
+                <option value="tam">தமிழ் — Tamil</option>
+                <option value="guj">ગુજરાતી — Gujarati</option>
+                <option value="kan">ಕನ್ನಡ — Kannada</option>
+                <option value="mal">മലയാളം — Malayalam</option>
+                <option value="pan">ਪੰਜਾਬੀ — Punjabi</option>
+                <option value="ori">ଓଡ଼ିଆ — Odia</option>
+                <option value="ass">অসমীয়া — Assamese</option>
+                <option value="urd">اردو — Urdu</option>
+                <option value="san">संस्कृतम् — Sanskrit</option>
+                <option value="nep">नेपाली — Nepali</option>
+                <option value="kok">कोंकणी — Konkani</option>
+                <option value="mai">मैथिली — Maithili</option>
+                <option value="doi">डोगरी — Dogri</option>
+                <option value="mni">ꯃꯤꯇꯩꯂꯣꯟ — Manipuri</option>
+                <option value="bodo">बड़ो — Bodo</option>
+                <option value="kas">کٲشُر — Kashmiri</option>
+                <option value="sin">سنڌي — Sindhi</option>
+                <option value="sat">ᱥᱟᱱᱛᱟᱲᱤ — Santali</option>
               </select>
             </div>
             <div>

@@ -80,18 +80,42 @@ def gemini_status() -> str:
 
 
 PROMPT = """You are an expert digitization assistant for Indian land revenue records
-(Khatian, Khasra, Patta, Jamabandi, etc.). Read the document and extract these fields.
+(Khatian, Khasra, Patta, Jamabandi, FIR, Form-1, pahani, adangal, etc.).
+
+MULTILINGUAL READING: the document may be in ANY Indian language and script —
+Devanagari (Hindi, Marathi, Sanskrit, Konkani, Nepali, Maithili, Dogri, Bodo),
+Bengali (Bengali, Assamese, Manipuri), Gurmukhi (Punjabi), Gujarati, Odia,
+Tamil, Telugu, Kannada, Malayalam, Arabic script (Urdu, Kashmiri, Sindhi),
+Ol Chiki (Santali), Meetei Mayek — or English, or several mixed on one page.
+Read every script natively. Do NOT transliterate or translate: copy every
+value EXACTLY as written, in whatever script it appears.
+
+Labels may appear in any of these languages. Common equivalents to match on:
+- owner name: खातेदार / मालिक का नाम / খতিয়ান দাবিদার / குதிரையாளர் / కౌలుదారు / ಸ್ವಾಮ್ಯದಾರ / ഉടമസ്ഥൻ / ખેતુનાર / ରାଇଯତ / ਕਬਜ਼ਾਕਾਰ / پٹادار and "Name of Tenant / Khatedar / Pattadar / Raiyat"
+- father's name: पिता का नाम / পিতার নাম / தந்தை பெயர் / తండ్రి పేరు / ತಂದೆಯ ಹೆಸರು / അച്ഛന്റെ പേര് / والد کا نام and "Father's Name / S/o"
+- khatian/khata: खाता / खसरा / দাগ নম্বর / கதா / ఖాతా / ಖಾತಾ / ખાતા and "Khatian No / Khata No / Khasra No / Patta No"
+- village: ग्राम / मौजा / গ্রাম / মৌজা / கிராமம் / గ్రామం / ಗ್ರಾಮ / ഗ്രാമം / ગામડું / పట్టణం and "Village / Mouza"
+- tehsil: तहसील / तेहसिल / সার্কেল / தாலுகா / మండలం / ಹೋಬಳಿ / താലൂക്ക് / તહસીલ and "Tehsil / Taluk / Mandal / Circle / Block"
+- district: जिला / জেলা / மாவட்டம் / జిల్లా / ಜಿಲ್ಲೆ / ജില്ല / જિલ્લો / ଜିଲ୍ଲା and "District / Zilla"
+- area: रकबा / क्षेत्रफल / এরিয়া / রাজস্ব / பரப்பு / విస్తీర్ణం / ವಿಸ್ತೀರ್ಣ / വിസ്തീർണ്ണം / ஏக்கர் / हेक्टेयर / বিঘা / কাঠা and "Area / Rageba / Extent"
+- land type: भूमि का प्रकार / জমির ধরন / భూమి రకం / ಭೂಮಿಯ ವಿಧ and "Land Type / Nature of Land / Class of Land"
+(These are hints, not an exhaustive list — match semantically, not literally.)
 
 Return ONLY a JSON object (no markdown, no explanation) with exactly these keys:
 {field_list}
 
 Rules:
-- Copy values EXACTLY as written (do not translate or normalise names).
+- Copy values EXACTLY as written (do not translate, transliterate or normalise names).
 - Omit a key (or use "") only when it is genuinely not present in the document.
 - For "area", capture the numeric value only (e.g. "2.50"); put the unit in "areaUnit"
-  (acre, hectare, bigha, katha, decimal, guntha, sq_yard, sq_feet).
-- Preserve Indic script text as-is (Hindi/Bengali etc.), do not transliterate.
+  (acre, hectare, bigha, katha, decimal, guntha, cent, sq_yard, sq_feet — use the
+  English name of whatever unit is written, incl. regional units like bigha/katha/cent).
+- Numbers may be written in Indic digits (०१२३४५६७८९, ০১২৩৪৫৬৭৮৯, etc.) or
+  Arabic-Indic (٠١٢٣٤٥٦٧٨٩) — convert them to ASCII digits (e.g. ०१२ → 012).
 - "confidence" is your 0-100 certainty for each extracted field.
+- Also return "documentLanguage": the ISO 639 code (or comma-separated codes if
+  mixed, e.g. "hi,en") of the document's main language, and
+  "documentScript": the script name (e.g. Devanagari, Bengali, Tamil, Latin).
 - If the document is unreadable, return an empty "confidence" object and put the reason in "notes".
 
 Also return a top-level "notes" key (string) with anything anomalous (torn page,
@@ -103,6 +127,8 @@ FIELDS = [
     "area", "areaUnit", "village", "tehsil", "district", "state",
     "landType", "mutationDetails",
 ]
+
+_EXTRA_KEYS = ("documentLanguage", "documentScript")
 
 _MIME = {
     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -187,14 +213,15 @@ def _call_once(parts: list, temperature: float = 0.0) -> str:
     return resp.text or ""
 
 
-def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list[dict], float, list[str]]:
+def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
     """Send an image/PDF straight to Gemini (it does its own OCR).
 
-    Returns (fields, field_confidences, overall_confidence, warnings).
+    Returns (fields, field_confidences, overall_confidence, warnings, lang_info).
     """
     warnings: list[str] = []
+    lang_info: dict = {}
     if not gemini_available():
-        return {}, [], 0.0, ["Gemini not available"]
+        return {}, [], 0.0, ["Gemini not available"], lang_info
     mime = _MIME.get(suffix, "image/png")
     try:
         raw = _call([
@@ -202,15 +229,19 @@ def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list
             {"text": _prompt_with_fields()},
         ])
     except Exception as e:
-        return {}, [], 0.0, [f"Gemini call failed: {e}"]
+        return {}, [], 0.0, [f"Gemini call failed: {e}"], lang_info
 
     parsed = _parse_json(raw)
-    fields, conf_map, notes = _split_parsed(parsed)
+    fields, conf_map, notes, lang_info = _split_parsed(parsed, want_lang=True)
+    if lang_info.get("language"):
+        warnings.append(f"documentLanguage={lang_info['language']}")
+    if lang_info.get("script"):
+        warnings.append(f"documentScript={lang_info['script']}")
     if notes:
         warnings.append(f"Gemini notes: {notes}")
     if not fields:
         warnings.append("Gemini returned no fields.")
-        return {}, [], 0.0, warnings
+        return {}, [], 0.0, warnings, lang_info
 
     confs = []
     field_confidences = []
@@ -222,22 +253,27 @@ def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list
         confs.append(c)
         field_confidences.append({"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)})
     overall = round(sum(confs) / len(confs), 1) if confs else 0.0
-    return fields, field_confidences, overall, warnings
+    return fields, field_confidences, overall, warnings, lang_info
 
 
-def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, list[str]]:
-    """Extract fields from already-OCR'd/embedded text via Gemini."""
+def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
+    """Extract fields from already-OCR'd/embedded text via Gemini.
+
+    Returns (fields, field_confidences, overall_confidence, warnings, lang_info).
+    """
+    warnings: list[str] = []
+    lang_info: dict = {}
     if not gemini_available() or not text.strip():
-        return {}, [], 0.0, ["Gemini not available"]
+        return {}, [], 0.0, ["Gemini not available"], lang_info
     try:
         raw = _call([
             {"text": _prompt_with_fields() + "\n\nDOCUMENT TEXT:\n" + text[:24000]},
         ])
     except Exception as e:
-        return {}, [], 0.0, [f"Gemini call failed: {e}"]
+        return {}, [], 0.0, [f"Gemini call failed: {e}"], lang_info
 
     parsed = _parse_json(raw)
-    fields, conf_map, _ = _split_parsed(parsed)
+    fields, conf_map, _, lang_info = _split_parsed(parsed, want_lang=True)
     confs, field_confidences = [], []
     for f in FIELDS:
         v = (fields.get(f) or "").strip()
@@ -247,10 +283,20 @@ def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, l
         confs.append(c)
         field_confidences.append({"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)})
     overall = round(sum(confs) / len(confs), 1) if confs else 0.0
-    return fields, field_confidences, overall, []
+    return fields, field_confidences, overall, warnings, lang_info
 
 
-def _split_parsed(parsed: dict):
+def _split_parsed(parsed: dict, want_lang: bool = False):
+    fields = {k: str(parsed.get(k, "") or "") for k in FIELDS}
+    conf_map = parsed.get("confidence") if isinstance(parsed.get("confidence"), dict) else {}
+    notes = str(parsed.get("notes", "") or "")
+    lang_info = {
+        "language": str(parsed.get("documentLanguage", "") or "").strip().lower(),
+        "script": str(parsed.get("documentScript", "") or "").strip(),
+    }
+    if want_lang:
+        return fields, conf_map, notes, lang_info
+    return fields, conf_map, notes
     fields = {k: str(parsed.get(k, "") or "") for k in FIELDS}
     conf_map = parsed.get("confidence") if isinstance(parsed.get("confidence"), dict) else {}
     notes = str(parsed.get("notes", "") or "")

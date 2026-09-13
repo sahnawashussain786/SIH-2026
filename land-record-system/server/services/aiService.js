@@ -1,7 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import { extractFieldsFromText } from './extractor.js';
+import { extractFieldsFromText, detectLanguages, languageNames } from './extractor.js';
 import { runValidation } from './validator.js';
 
 const AI_BASE = (process.env.AI_SERVICE_URL || 'http://localhost:8001').replace(/\/$/, '');
@@ -75,6 +75,8 @@ function fallbackProcess(doc, started) {
   if (doc.district && !extracted.district) extracted.district = doc.district;
   if (doc.state && !extracted.state) extracted.state = doc.state;
 
+  // Script-aware language detection — every Indic script, no extra deps
+  const langs = detectLanguages(text);
   const fieldConfidences = Object.entries(extracted)
     .filter(([, v]) => v !== '' && v != null)
     .map(([field, value]) => ({
@@ -99,7 +101,9 @@ function fallbackProcess(doc, started) {
     ocrText: text,
     aiMeta: {
       engine: 'node-fallback',
-      language: 'en',
+      language: langs[0] || 'en',
+      languageName: languageNames(langs)[0] || 'English',
+      languages: langs.length ? langs : ['en'],
       documentType: doc.documentType || 'Khatian',
       preprocessed: false,
       pipeline: ['fallback-extraction'],

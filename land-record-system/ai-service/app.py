@@ -45,6 +45,7 @@ async def require_key(key: str | None = Depends(_api_key_header)):
 
 # ---------------- pipeline imports ----------------
 from common.utils import IMAGE_SUFFIXES  # noqa: E402
+from languages import INDIAN_LANGUAGES, script_report  # noqa: E402
 from preprocessing.image_clean import preprocess  # noqa: E402
 from ocr.recognize import detect_language, ocr_image, TESSERACT_AVAILABLE  # noqa: E402
 from extraction.field_extractor import extract_fields, score_fields  # noqa: E402
@@ -127,11 +128,14 @@ async def process(
     gem_fields: dict[str, str] = {}
     gem_confs: list[dict] = []
     gem_overall = 0.0
+    gem_lang: dict = {}  # Gemini's own language/script report
 
     if suffix in IMAGE_SUFFIXES:
-        # 0. Gemini vision path — reads the scan directly (best quality)
+        # 0. Gemini vision path — reads the scan directly (best quality).
+        # Gemini reads ALL Indian scripts natively (Devanagari, Bengali, Tamil,
+        # Telugu, Kannada, Malayalam, Gujarati, Odia, Gurmukhi, Urdu, ...).
         if GEMINI_ENABLED and gemini_available():
-            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(
+            gem_fields, gem_confs, gem_overall, gem_warn, gem_lang = gemini_extract_image(
                 data, suffix
             )
             warnings.extend(gem_warn)
@@ -150,8 +154,10 @@ async def process(
             data_pp, steps = data, []
             warnings.append(f"Preprocessing skipped: {e}")
 
-        langs = OCR_LANGS if language == "auto" else language
-        text, ocr_conf, ocr_warnings = ocr_image(data_pp, langs=langs)
+        # Script-aware OCR: an explicit language choice is honoured; "auto"
+        # detects the writing system and picks the right Tesseract packs.
+        ocr_langs = language if language and language != "auto" else "auto"
+        text, ocr_conf, ocr_warnings = ocr_image(data_pp, langs=ocr_langs)
         warnings.extend(ocr_warnings)
         if text.strip():
             pipeline.append("ocr")
@@ -163,7 +169,7 @@ async def process(
         pipeline.append("pdf-text-layer")
         if GEMINI_ENABLED and gemini_available() and not text.strip():
             # Scanned PDF without a text layer — let Gemini read the pages
-            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(
+            gem_fields, gem_confs, gem_overall, gem_warn, gem_lang = gemini_extract_image(
                 data, suffix
             )
             warnings.extend(gem_warn)
@@ -181,10 +187,31 @@ async def process(
         except Exception:
             raise HTTPException(status_code=400, detail="Unsupported file type")
 
-    # Language detection (informational)
-    langs_detected = detect_language(text) if text.strip() else []
-    if langs_detected:
-        pipeline.append("language-detection")
+    # Language detection — three sources, best available wins:
+    #   1. Gemini's own report (it read the actual document)
+    #   2. Unicode-script analysis (works for every Indic script, no extra deps)
+    #   3. langdetect (statistical, helps separate Latin-script languages)
+    script_info = script_report(text)
+    langdetect_langs = detect_language(text) if text.strip() else []
+    langs_detected: list[str] = []
+    gem_lang_code = (gem_lang or {}).get("language", "").split(",")[0].strip()
+    if gem_lang_code:
+        langs_detected = [gem_lang_code] + [
+            c for c in script_info["languages"] if c != gem_lang_code
+        ]
+        pipeline.append("language-detection (gemini)")
+    elif script_info["scripts"]:
+        langs_detected = script_info["languages"] or ["en"]
+        pipeline.append("language-detection (script)")
+    elif langdetect_langs:
+        langs_detected = langdetect_langs
+        pipeline.append("language-detection (statistical)")
+    primary_lang = langs_detected[0] if langs_detected else (
+        "auto" if language == "auto" else language
+    )
+    lang_names = [INDIAN_LANGUAGES[c]["name"] for c in langs_detected if c in INDIAN_LANGUAGES]
+    if lang_names:
+        warnings.append(f"Detected language: {' + '.join(lang_names)}")
 
     # ----- extraction -----
     if (
@@ -194,11 +221,12 @@ async def process(
         and gemini_available()
     ):
         # Text input: Gemini extracts from the text itself
-        g_fields, g_confs, g_overall, g_warn = gemini_extract_text(text)
+        g_fields, g_confs, g_overall, g_warn, g_lang = gemini_extract_text(text)
         warnings.extend(g_warn)
         if g_fields:
             pipeline.append("gemini-text")
             gem_fields, gem_confs, gem_overall = g_fields, g_confs, g_overall
+            gem_lang = g_lang
             engine_tag = "gemini-text"
 
     extracted_regex = extract_fields(text)
@@ -235,12 +263,16 @@ async def process(
         "ai_meta": {
             "engine": engine_tag,
             "gemini": gemini_status(),
-            "language": (
-                langs_detected[0]
-                if langs_detected
-                else ("auto" if language == "auto" else language)
+            "language": primary_lang,
+            "languageName": (
+                INDIAN_LANGUAGES[primary_lang]["name"]
+                if primary_lang in INDIAN_LANGUAGES
+                else (gem_lang or {}).get("language", primary_lang)
             ),
             "languages": langs_detected,
+            "script": (gem_lang or {}).get("script", "") or (
+                script_info["scripts"][0] if script_info["scripts"] else ""
+            ),
             "documentType": document_type,
             "preprocessed": bool(steps),
             "pageTexts": [text[:2000]] if text else [],
