@@ -9,19 +9,35 @@ const LABELS = {
   ownerName: [
     /name\s+of\s+(the\s+)?tenant[:\-]?\s*(.+)/i,
     /owner(?:'s)?\s*name[:\-]?\s*(.+)/i,
-    /name[:\-]\s*(.+)/i,
-    /malik\s*ka\s*naam[:\-]?\s*(.+)/i,
+    /(?:name\s+of\s+)?(?:khatedar|pattdar|pattadar|raiyyat|ryot)[:\-]?\s*(.+)/i,
+    /malik\s*(?:ka\s*)?naam[:\-]?\s*(.+)/i,
+    /(?:full\s+)?name[:\-]\s*(.+)/i,
   ],
-  khatianNumber: [/khatian\s*(?:no|number|#)[:\-]?\s*([0-9]+)/i, /khata\s*(?:no|number|#)[:\-]?\s*([0-9]+)/i],
-  plotNumber: [/plot\s*(?:no|number|#)[:\-]?\s*([0-9]+)/i, /dag\s*(?:no|#)[:\-]?\s*([0-9]+)/i],
-  surveyNumber: [/survey\s*(?:no|number|#)[:\-]?\s*([0-9a-z\-\/]+)/i, /khasra\s*(?:no|number|#)[:\-]?\s*([0-9a-z\-\/]+)/i],
-  area: [/area[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*(acre|hectare|bigha|katha|decimal|sq\.?\s*yards?|guntha)?/i],
-  village: [/village[:\-]?\s*(.+)/i, /mouza[:\-]?\s*(.+)/i, /gaon[:\-]?\s*(.+)/i],
-  tehsil: [/tehsil[:\-]?\s*(.+)/i, /tahsil[:\-]?\s*(.+)/i, /block[:\-]?\s*(.+)/i, /thana[:\-]?\s*(.+)/i],
-  district: [/district[:\-]?\s*(.+)/i, /zilla[:\-]?\s*(.+)/i],
-  state: [/state[:\-]?\s*(.+)/i],
-  landType: [/land\s*type[:\-]?\s*(.+)/i, /nature\s*of\s*land[:\-]?\s*(.+)/i, /class\s*of\s*land[:\-]?\s*(.+)/i],
-  mutationDetails: [/mutation[:\-]?\s*(.+)/i],
+  fatherName: [
+    /father(?:'s)?\s*name[:\-]?\s*(.+)/i,
+    /s\/o[:\-]?\s*(.+)/i,
+    /pitra?\s*(?:ka\s*)?naam[:\-]?\s*(.+)/i,
+  ],
+  khatianNumber: [
+    /khatian\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9]{1,6})/i,
+    /khata\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9]{1,6})/i,
+    /khatiyan\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9]{1,6})/i,
+  ],
+  plotNumber: [
+    /plot\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9]{1,6})/i,
+    /dag\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9]{1,6})/i,
+  ],
+  surveyNumber: [
+    /survey\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/i,
+    /khasra\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/i,
+  ],
+  area: [/area[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*(acre|hectare|hect|bigha|katha|decimal|sq\.?\s*yards?|sq\.?\s*feet?|guntha)?/i, /rageba[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*(acre|hectare|bigha|katha|decimal|guntha)?/i],
+  village: [/village[:\-]?\s*(.+)/i, /mouza[:\-]?\s*(.+)/i, /gaon[:\-]?\s*(.+)/i, /gram[:\-]?\s*(.+)/i],
+  tehsil: [/tehsil[:\-]?\s*(.+)/i, /tahsil[:\-]?\s*(.+)/i, /block[:\-]?\s*(.+)/i, /thana[:\-]?\s*(.+)/i, /mandal[:\-]?\s*(.+)/i],
+  district: [/district[:\-]?\s*(.+)/i, /zilla[:\-]?\s*(.+)/i, /jila[:\-]?\s*(.+)/i],
+  state: [/state[:\-]?\s*(.+)/i, /prant[:\-]?\s*(.+)/i],
+  landType: [/land\s*type[:\-]?\s*(.+)/i, /nature\s*of\s*land[:\-]?\s*(.+)/i, /class\s*of\s*land[:\-]?\s*(.+)/i, /zameen\s*ka\s*prakar[:\-]?\s*(.+)/i],
+  mutationDetails: [/mutation[:\-]?\s*(.+)/i, /namantari?[:\-]?\s*(.+)/i],
 };
 
 const AREA_UNITS = ['acre', 'hectare', 'bigha', 'katha', 'decimal', 'guntha', 'sq yards', 'sq feet'];
@@ -49,6 +65,7 @@ function clean(value) {
 export function extractFieldsFromText(text) {
   const out = {
     ownerName: '',
+    fatherName: '',
     khatianNumber: '',
     plotNumber: '',
     surveyNumber: '',
@@ -82,10 +99,11 @@ export function extractFieldsFromText(text) {
     out.areaUnit = found;
   }
 
-  // Normalise trailing "Dist." style noise
-  ['ownerName', 'village', 'tehsil', 'district', 'state', 'landType'].forEach((k) => {
+  // Normalise trailing "Dist." style noise; strip honorific leftovers on names
+  ['ownerName', 'fatherName', 'village', 'tehsil', 'district', 'state', 'landType'].forEach((k) => {
     out[k] = out[k].replace(/\s*,\s*$/, '').replace(/\b(dist\.?|district)\s*$/i, '').trim();
   });
+  out.ownerName = out.ownerName.replace(/^(?:shri|smt\.?|sri|md\.?|mohd\.?)\s+/i, '').trim();
 
   return out;
 }

@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const landRecordSchema = new mongoose.Schema(
   {
     ownerName: { type: String, required: true, index: true },
+    fatherName: { type: String, default: '' },
     khatianNumber: { type: String, default: '', index: true },
     plotNumber: { type: String, default: '', index: true },
     surveyNumber: { type: String, default: '' },

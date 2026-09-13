@@ -2,6 +2,12 @@
 
 The Node server calls POST /api/v1/process with multipart file + metadata
 and receives structured extraction with per-field confidence scores.
+
+Extraction order:
+1. Gemini (if GEMINI_API_KEY is set) — vision mode for images/PDFs,
+   text mode for plain text. Handles noisy scans & handwriting well.
+2. Deterministic regex extractor — always runs as cross-check and
+   fills any field Gemini missed (never overwrites a Gemini hit).
 """
 from __future__ import annotations
 
@@ -19,7 +25,7 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY", "dev-ai-key")
 PORT = int(os.getenv("PORT", "8001"))
 
-app = FastAPI(title="Land Record AI Service", version="1.0.0")
+app = FastAPI(title="Land Record AI Service", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,9 +48,16 @@ from common.utils import IMAGE_SUFFIXES  # noqa: E402
 from preprocessing.image_clean import preprocess  # noqa: E402
 from ocr.recognize import detect_language, ocr_image, TESSERACT_AVAILABLE  # noqa: E402
 from extraction.field_extractor import extract_fields, score_fields  # noqa: E402
+from extraction.gemini_extractor import (  # noqa: E402
+    gemini_available,
+    gemini_extract_image,
+    gemini_extract_text,
+    gemini_status,
+)
 from validation.rules import run_validation, confidence_route  # noqa: E402
 
 OCR_LANGS = os.getenv("OCR_LANGS", "eng+hin+ben")
+GEMINI_ENABLED = (os.getenv("GEMINI_ENABLED", "true") == "true")
 
 
 @app.get("/health")
@@ -52,8 +65,38 @@ async def health(_key: str = Depends(require_key)):
     return {
         "ok": True,
         "service": "land-record-ai",
+        "extraction": gemini_status(),
         "ocr": "tesseract" if TESSERACT_AVAILABLE else "unavailable (fallback mode)",
     }
+
+
+def _merge_extraction(regex_fields: dict, gem_fields: dict, gem_confs: list[dict], regex_scores: list[dict]):
+    """Merge Gemini and regex extractions: Gemini first, regex fills gaps.
+
+    Returns (merged_fields, field_confidences).
+    """
+    merged = dict(regex_fields)
+    used_gemini_for = []
+    for k, v in (gem_fields or {}).items():
+        v = (v or "").strip()
+        if v and not merged.get(k, "").strip():
+            merged[k] = v
+            used_gemini_for.append(k)
+
+    conf_by_field = {c["field"]: c["confidence"] for c in (gem_confs or [])}
+    regex_conf = {c["field"]: c["confidence"] for c in (regex_scores or [])}
+    field_confidences: list[dict] = []
+    for k, v in merged.items():
+        if not v:
+            continue
+        if k in used_gemini_for:
+            c = conf_by_field.get(k, 80.0)
+        elif k in conf_by_field:  # both agreed — bump confidence
+            c = min(99.0, conf_by_field[k] + 3.0)
+        else:
+            c = regex_conf.get(k, 85.0)
+        field_confidences.append({"field": k, "value": v[:120], "confidence": round(float(c), 1)})
+    return merged, field_confidences
 
 
 @app.post("/api/v1/process")
@@ -68,29 +111,57 @@ async def process(
     data = await file.read()
     warnings: list[str] = []
     pipeline: list[str] = []
+    engine_tag = "regex"
 
     suffix = os.path.splitext(file.filename or "")[1].lower()
     text = ""
     ocr_conf = 0.0
+    steps: list[str] = []
+    gem_fields: dict[str, str] = {}
+    gem_confs: list[dict] = []
+    gem_overall = 0.0
 
     if suffix in IMAGE_SUFFIXES:
-        # 1. pre-process
+        # 0. Gemini vision path — reads the scan directly (best quality)
+        if GEMINI_ENABLED and gemini_available():
+            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(data, suffix)
+            warnings.extend(gem_warn)
+            pipeline.append("gemini-vision")
+            if gem_fields:
+                engine_tag = "gemini-vision"
+        else:
+            gem_fields, gem_confs, gem_overall = {}, [], 0.0
+
+        # Preprocess + Tesseract for the cross-check text (and as the only
+        # path when Gemini is not configured).
         try:
-            data, steps = preprocess(data)
+            data_pp, steps = preprocess(data)
             pipeline.extend(steps)
         except Exception as e:  # corrupt image etc.
+            data_pp, steps = data, []
             warnings.append(f"Preprocessing skipped: {e}")
 
-        # 2. OCR
         langs = OCR_LANGS if language == "auto" else language
-        text, ocr_conf, ocr_warnings = ocr_image(data, langs=langs)
+        text, ocr_conf, ocr_warnings = ocr_image(data_pp, langs=langs)
         warnings.extend(ocr_warnings)
-        pipeline.append("ocr")
+        if text.strip():
+            pipeline.append("ocr")
+        elif not gem_fields:
+            warnings.append("No text could be extracted — verify manually.")
 
     elif suffix == ".pdf":
-        warnings.append("PDF: using embedded text layer if present (raster OCR for PDFs needs extra deps).")
         text = _extract_pdf_text(data)
         pipeline.append("pdf-text-layer")
+        if GEMINI_ENABLED and gemini_available() and not text.strip():
+            # Scanned PDF without a text layer — let Gemini read the pages
+            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(data, suffix)
+            warnings.extend(gem_warn)
+            pipeline.append("gemini-vision-pdf")
+            if gem_fields:
+                engine_tag = "gemini-vision-pdf"
+        else:
+            gem_fields, gem_confs, gem_overall = {}, [], 0.0
+
     else:
         # Maybe a text file (sidecar / tests)
         try:
@@ -99,30 +170,42 @@ async def process(
         except Exception:
             raise HTTPException(status_code=400, detail="Unsupported file type")
 
-    if not text.strip():
-        warnings.append("No text could be extracted — treat as low confidence and verify manually.")
+    # Language detection (informational)
+    langs_detected = detect_language(text) if text.strip() else []
+    if langs_detected:
+        pipeline.append("language-detection")
 
-    # 3. language detection
-    langs_detected = detect_language(text)
-    pipeline.append("language-detection")
+    # ----- extraction -----
+    if suffix not in IMAGE_SUFFIXES and suffix != ".pdf" and GEMINI_ENABLED and gemini_available():
+        # Text input: Gemini extracts from the text itself
+        g_fields, g_confs, g_overall, g_warn = gemini_extract_text(text)
+        warnings.extend(g_warn)
+        if g_fields:
+            pipeline.append("gemini-text")
+            gem_fields, gem_confs, gem_overall = g_fields, g_confs, g_overall
+            engine_tag = "gemini-text"
 
-    # 4. extraction + scoring
-    extracted = extract_fields(text)
-    field_confidences = score_fields(extracted, ocr_conf, len(text))
+    extracted_regex = extract_fields(text)
+    regex_scores = score_fields(extracted_regex, ocr_conf, len(text))
+    extracted, field_confidences = _merge_extraction(extracted_regex, gem_fields, gem_confs, regex_scores)
     pipeline.append("field-extraction")
 
-    # 5. validation + routing
+    # district/state hints only when still unknown
+    if district_hint and not extracted.get("district", "").strip():
+        extracted["district"] = district_hint
+
+    # ----- validation + routing -----
     validation = run_validation(extracted)
     overall = (
         round(sum(f["confidence"] for f in field_confidences) / len(field_confidences), 1)
         if field_confidences
-        else 0.0
+        else (gem_overall if gem_overall else 0.0)
     )
     route = confidence_route(overall, validation)
     pipeline.append("validation")
 
     return {
-        "engine": "python-fastapi" + ("+tesseract" if TESSERACT_AVAILABLE else "+fallback"),
+        "engine": "python-fastapi+" + engine_tag,
         "success": True,
         "extracted": extracted,
         "field_confidences": field_confidences,
@@ -130,11 +213,12 @@ async def process(
         "validation": {**validation, "duplicates": []},
         "ocr_text": text,
         "ai_meta": {
-            "engine": "python-fastapi",
+            "engine": engine_tag,
+            "gemini": gemini_status(),
             "language": (langs_detected[0] if langs_detected else ("auto" if language == "auto" else language)),
             "languages": langs_detected,
             "documentType": document_type,
-            "preprocessed": bool(pipeline),
+            "preprocessed": bool(steps),
             "pageTexts": [text[:2000]] if text else [],
             "pipeline": pipeline,
             "warnings": warnings,

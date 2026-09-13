@@ -7,6 +7,7 @@ import DocumentViewer from '../components/DocumentViewer.jsx';
 
 const FIELD_LABELS = {
   ownerName: 'Owner Name',
+  fatherName: "Father's Name",
   khatianNumber: 'Khatian Number',
   plotNumber: 'Plot Number',
   surveyNumber: 'Survey/Khasra Number',

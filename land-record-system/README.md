@@ -26,13 +26,23 @@ Old Land Record → Upload PDF/Image → Pre-processing → OCR → AI Extractio
                                   │
                          ┌────────┴────────┐
                          ▼                 ▼
-                        OCR              NLP/Extraction
-                   (Tesseract)      (rules + confidence scoring)
+                  Gemini (vision/text)   Regex cross-check
+                 primary extraction      + confidence scoring
 ```
 
 - **client/** — React 18 + Vite + Tailwind CSS + Recharts (dashboard, upload, verification split-screen, records search, admin)
 - **server/** — Node + Express + MongoDB (JWT auth, RBAC, upload, AI orchestration, validation, audit logs)
-- **ai-service/** — Python FastAPI (OpenCV pre-processing, Tesseract OCR, field extraction, validation rules)
+- **ai-service/** — Python FastAPI (**Google Gemini** vision/text extraction, OpenCV pre-processing, Tesseract cross-check OCR, regex fallback, validation rules)
+
+### AI extraction engine
+
+| Mode | Trigger | Quality |
+|---|---|---|
+| **Gemini vision** | `GEMINI_API_KEY` set in `ai-service/.env` → images/scanned PDFs sent straight to Gemini (free key: [aistudio.google.com/apikey](https://aistudio.google.com/apikey)) | Best — reads noisy scans & handwriting, no Tesseract needed |
+| **Gemini text** | same key, text/PDF-text input | Very good — LLM field extraction |
+| **Regex engine** | no key / `GEMINI_ENABLED=false` / Gemini outage | Good on printed label-style records |
+
+Gemini and the regex extractor run **in parallel and are merged**: Gemini fills what regex misses, regex fills what Gemini misses, and fields both agree on get a confidence boost.
 
 ## Features
 
@@ -100,11 +110,12 @@ Open **http://localhost:5173**
 
 ## Graceful degradation (offline demo mode)
 
-The system works **even without** Tesseract/Python installed:
+The system works **even without** Gemini/Tesseract/Python installed:
 
-1. **Python AI service running + Tesseract installed** → full OCR pipeline with image enhancement and real recognition.
-2. **Python AI service running, no Tesseract** → text-layer extraction for PDFs/text files, warnings added, low-confidence routing.
-3. **AI service unreachable** → the Node server falls back to a heuristic extractor that reads a `.txt` sidecar next to the upload (see `sample-documents/`) or synthesizes a plausible record, clearly flagged with `engine: node-fallback` and a warning in the UI.
+1. **Gemini key configured** → scans/PDFs are read directly by the multimodal model — best results, no OCR install needed.
+2. **Python AI service running + Tesseract installed** → full OCR pipeline with image enhancement and real recognition.
+3. **Python AI service running, no Gemini/Tesseract** → text-layer extraction for PDFs/text files, warnings added, low-confidence routing.
+4. **AI service unreachable** → the Node server falls back to a heuristic extractor that reads a `.txt` sidecar next to the upload (see `sample-documents/`) or synthesizes a plausible record, clearly flagged with `engine: node-fallback` and a warning in the UI.
 
 This lets you demo the complete workflow (upload → extract → validate → verify → records → analytics) on any machine.
 
@@ -141,5 +152,5 @@ Or manually: log in as the officer → Upload → drop `sample-documents/khatian
 
 - Set strong `JWT_SECRET`, restrict `CLIENT_URL` CORS origin, put the API behind HTTPS.
 - Swap local `uploads/` for Cloudinary/S3 (`File Storage` in the stack) — only `middleware/upload.js` and `DocumentViewer` need changes.
-- For production-scale OCR of vernacular/handwritten records, replace Tesseract with Google Vision / Azure OCR inside `ai-service/ocr/recognize.py` — the interface stays the same.
+- For air-gapped deployments, set `GEMINI_ENABLED=false` and rely on Tesseract + regex — no data ever leaves the server.
 - Deploy: client → Vercel, server + AI service → Render/Railway, DB → MongoDB Atlas.

@@ -7,11 +7,10 @@ const fieldConfidenceSchema = new mongoose.Schema(
     confidence: { type: Number, min: 0, max: 100 },
   },
   { _id: false }
-);
-
-const aiMetaSchema = new mongoose.Schema(
+);  const aiMetaSchema = new mongoose.Schema(
   {
     engine: { type: String, default: 'unknown' },
+    gemini: { type: String, default: '' },
     language: { type: String, default: 'unknown' },
     languages: [{ type: String }],
     documentType: { type: String, default: 'unknown' },
@@ -48,6 +47,7 @@ const documentSchema = new mongoose.Schema(
 
     extracted: {
       ownerName: { type: String, default: '' },
+      fatherName: { type: String, default: '' },
       khatianNumber: { type: String, default: '' },
       plotNumber: { type: String, default: '' },
       area: { type: String, default: '' },
