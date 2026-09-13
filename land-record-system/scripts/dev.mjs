@@ -7,9 +7,11 @@
  *   node scripts/dev.mjs              start everything
  *   node scripts/dev.mjs --no-ai      skip the Python AI service
  *   node scripts/dev.mjs --kill       free the ports first (kills anything on 5000/5173/8001)
+ *   node scripts/dev.mjs --stop       stop everything and exit (no start)
  *   node scripts/dev.mjs --check      pre-flight checks only, start nothing
  *
- * Ctrl+C stops everything it started.
+ * If the ports are held by a PREVIOUS copy of this same project, the launcher
+ * stops it automatically — double-clicking twice in a row just works.
  */
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -23,6 +25,7 @@ const ARGS = new Set(process.argv.slice(2));
 const KILL_FIRST = ARGS.has('--kill') || ARGS.has('-k');
 const CHECK_ONLY = ARGS.has('--check');
 const SKIP_AI = ARGS.has('--no-ai');
+const STOP_MODE = ARGS.has('--stop');
 
 const C = {
   reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m',
@@ -132,7 +135,7 @@ const problems = [];
 const notes = [];
 const PY = hasCommand('python') ? 'python' : 'python3';
 
-console.log(color('bold', '\n  Land Record System — starting all services\n'));
+console.log(color('bold', STOP_MODE ? '\n  Land Record System\n' : '\n  Land Record System — starting all services\n'));
 
 // 1. node/python available
 if (!hasCommand('node')) problems.push('Node.js is not installed or not on PATH');
@@ -178,24 +181,64 @@ if (problems.length) {
 }
 for (const n of notes) console.log(color('yellow', '  ⚠ ' + n));
 
-/* ---------------- free ports ---------------- */
+/* ---------------- stop mode / free ports ---------------- */
+
+// Probe whether a listening port belongs to OUR project (health endpoint identifies it)
+async function isOurs(svc) {
+  if (!svc.health) return false;
+  try {
+    const r = await fetch(svc.health, { signal: AbortSignal.timeout(1500) });
+    const body = await r.text();
+    if (svc.name === 'server') return body.includes('land-record-api');
+    if (svc.name === 'ai') return body.includes('land-record-ai') || r.status === 401; // 401 = our key-guard
+    return r.status === 200; // vite dev server responds 200 on /
+  } catch {
+    return false;
+  }
+}
+
+if (STOP_MODE) {
+  console.log(color('bold', '\n  Land Record System — stopping all services\n'));
+  let killed = 0;
+  for (const s of SERVICES) {
+    if (await portBusy(s.port)) {
+      killed += killPort(s.port);
+      console.log(color('yellow', `  ⚏ stopped whatever was on port ${s.port} (${s.label})`));
+    } else {
+      console.log(color('dim', `  · port ${s.port} already free`));
+    }
+  }
+  console.log(killed ? color('green', '\n  ✓ All services stopped.') : color('green', '\n  ✓ Nothing was running.'));
+  console.log();
+  process.exit(0);
+}
 
 for (const s of SERVICES) {
   if (await portBusy(s.port)) {
+    // If a previous copy of OUR stack holds the port, replace it automatically.
+    if (await isOurs(s)) {
+      killPort(s.port);
+      // wait until the port is actually released (TIME_WAIT/binding lag on Windows)
+      let freed = false;
+      for (let i = 0; i < 15; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        if (!(await portBusy(s.port))) { freed = true; break; }
+      }
+      if (!freed) {
+        problems.push(`port ${s.port} is still held after stopping the previous ${s.label.trim()} — close it manually`);
+        continue;
+      }
+      console.log(color('yellow', `  ⚏ replaced an already-running ${s.label.trim()} (port ${s.port})`));
+      continue;
+    }
     if (KILL_FIRST) {
       const n = killPort(s.port);
       await new Promise((r) => setTimeout(r, 800));
       console.log(color('yellow', `  ⚏ port ${s.port} was busy — killed ${n} process(es)`));
     } else {
-      problems.push(`port ${s.port} is already in use (${s.label}) → run "node scripts/dev.mjs --kill" or close the other app`);
+      problems.push(`port ${s.port} is used by another app (${s.label}) → close it, or run "node scripts/dev.mjs --kill" to force`);
     }
   }
-}
-if (problems.length) {
-  console.log(color('red', '\n  Cannot start:'));
-  for (const p of problems) console.log(color('red', '   ✗ ' + p));
-  console.log();
-  process.exit(1);
 }
 
 if (CHECK_ONLY) {

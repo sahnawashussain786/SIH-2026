@@ -9,6 +9,7 @@
     "dev:all": "node scripts/dev.mjs",
     "dev:no-ai": "node scripts/dev.mjs --no-ai",
     "kill": "node scripts/dev.mjs --kill",
+    "stop": "node scripts/dev.mjs --stop",
     "check": "node scripts/dev.mjs --check",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",

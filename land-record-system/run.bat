@@ -11,5 +11,10 @@ echo.
 node scripts/dev.mjs %*
 
 echo.
-echo   All services stopped. Press any key to close.
-pause > nul
+echo   All services stopped.
+choice /c SR /n /m "   [S]top leftover services  or  [R]estart everything? "
+if errorlevel 2 (
+  node scripts/dev.mjs
+) else (
+  node scripts/dev.mjs --stop
+)
