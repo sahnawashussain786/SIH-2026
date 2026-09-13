@@ -4,18 +4,18 @@
   "private": true,
   "description": "Intelligent Land Record Digitization and Validation System (SIH-2026) — MERN + Python AI microservice",
   "scripts": {
-    "install:all": "npm install --prefix server && npm install --prefix client && npm install",
-    "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "dev:all": "concurrently -n server,client,ai -c blue,green,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\" \"npm run dev --prefix ai-service\"",
+    "start": "node scripts/dev.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:all": "node scripts/dev.mjs",
+    "dev:no-ai": "node scripts/dev.mjs --no-ai",
+    "kill": "node scripts/dev.mjs --kill",
+    "check": "node scripts/dev.mjs --check",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "dev:ai": "npm run dev --prefix ai-service",
     "build": "npm run build --prefix client",
-    "start": "npm run start --prefix server",
+    "start:server": "npm run start --prefix server",
     "seed": "npm run seed --prefix server",
     "smoke-test": "node server/scripts/smokeTest.js"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
   }
 }

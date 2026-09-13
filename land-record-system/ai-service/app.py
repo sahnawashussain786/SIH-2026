@@ -9,6 +9,7 @@ Extraction order:
 2. Deterministic regex extractor — always runs as cross-check and
    fills any field Gemini missed (never overwrites a Gemini hit).
 """
+
 from __future__ import annotations
 
 import io
@@ -23,7 +24,6 @@ from fastapi.security import APIKeyHeader
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY", "dev-ai-key")
-PORT = int(os.getenv("PORT", "8001"))
 
 app = FastAPI(title="Land Record AI Service", version="1.1.0")
 
@@ -57,7 +57,7 @@ from extraction.gemini_extractor import (  # noqa: E402
 from validation.rules import run_validation, confidence_route  # noqa: E402
 
 OCR_LANGS = os.getenv("OCR_LANGS", "eng+hin+ben")
-GEMINI_ENABLED = (os.getenv("GEMINI_ENABLED", "true") == "true")
+GEMINI_ENABLED = os.getenv("GEMINI_ENABLED", "true") == "true"
 
 
 @app.get("/health")
@@ -70,7 +70,12 @@ async def health(_key: str = Depends(require_key)):
     }
 
 
-def _merge_extraction(regex_fields: dict, gem_fields: dict, gem_confs: list[dict], regex_scores: list[dict]):
+def _merge_extraction(
+    regex_fields: dict,
+    gem_fields: dict,
+    gem_confs: list[dict],
+    regex_scores: list[dict],
+):
     """Merge Gemini and regex extractions: Gemini first, regex fills gaps.
 
     Returns (merged_fields, field_confidences).
@@ -95,7 +100,9 @@ def _merge_extraction(regex_fields: dict, gem_fields: dict, gem_confs: list[dict
             c = min(99.0, conf_by_field[k] + 3.0)
         else:
             c = regex_conf.get(k, 85.0)
-        field_confidences.append({"field": k, "value": v[:120], "confidence": round(float(c), 1)})
+        field_confidences.append(
+            {"field": k, "value": v[:120], "confidence": round(float(c), 1)}
+        )
     return merged, field_confidences
 
 
@@ -124,7 +131,9 @@ async def process(
     if suffix in IMAGE_SUFFIXES:
         # 0. Gemini vision path — reads the scan directly (best quality)
         if GEMINI_ENABLED and gemini_available():
-            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(data, suffix)
+            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(
+                data, suffix
+            )
             warnings.extend(gem_warn)
             pipeline.append("gemini-vision")
             if gem_fields:
@@ -154,7 +163,9 @@ async def process(
         pipeline.append("pdf-text-layer")
         if GEMINI_ENABLED and gemini_available() and not text.strip():
             # Scanned PDF without a text layer — let Gemini read the pages
-            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(data, suffix)
+            gem_fields, gem_confs, gem_overall, gem_warn = gemini_extract_image(
+                data, suffix
+            )
             warnings.extend(gem_warn)
             pipeline.append("gemini-vision-pdf")
             if gem_fields:
@@ -176,7 +187,12 @@ async def process(
         pipeline.append("language-detection")
 
     # ----- extraction -----
-    if suffix not in IMAGE_SUFFIXES and suffix != ".pdf" and GEMINI_ENABLED and gemini_available():
+    if (
+        suffix not in IMAGE_SUFFIXES
+        and suffix != ".pdf"
+        and GEMINI_ENABLED
+        and gemini_available()
+    ):
         # Text input: Gemini extracts from the text itself
         g_fields, g_confs, g_overall, g_warn = gemini_extract_text(text)
         warnings.extend(g_warn)
@@ -187,7 +203,9 @@ async def process(
 
     extracted_regex = extract_fields(text)
     regex_scores = score_fields(extracted_regex, ocr_conf, len(text))
-    extracted, field_confidences = _merge_extraction(extracted_regex, gem_fields, gem_confs, regex_scores)
+    extracted, field_confidences = _merge_extraction(
+        extracted_regex, gem_fields, gem_confs, regex_scores
+    )
     pipeline.append("field-extraction")
 
     # district/state hints only when still unknown
@@ -197,7 +215,9 @@ async def process(
     # ----- validation + routing -----
     validation = run_validation(extracted)
     overall = (
-        round(sum(f["confidence"] for f in field_confidences) / len(field_confidences), 1)
+        round(
+            sum(f["confidence"] for f in field_confidences) / len(field_confidences), 1
+        )
         if field_confidences
         else (gem_overall if gem_overall else 0.0)
     )
@@ -215,7 +235,11 @@ async def process(
         "ai_meta": {
             "engine": engine_tag,
             "gemini": gemini_status(),
-            "language": (langs_detected[0] if langs_detected else ("auto" if language == "auto" else language)),
+            "language": (
+                langs_detected[0]
+                if langs_detected
+                else ("auto" if language == "auto" else language)
+            ),
             "languages": langs_detected,
             "documentType": document_type,
             "preprocessed": bool(steps),
