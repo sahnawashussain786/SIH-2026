@@ -64,7 +64,7 @@ const SERVICES = [
     port: 8001,
     cwd: path.join(ROOT, 'ai-service'),
     command: () => `${PY} -m uvicorn app:app --port 8001`,
-    health: null, // needs API key header; a plain GET 401 also proves it is alive
+    health: `http://127.0.0.1:8001/health`, // without the API key this returns 401 — which is itself our fingerprint
     required: false, // optional — server falls back to its own extractor
     hint: 'pip install -r ai-service/requirements.txt',
   },
@@ -72,17 +72,38 @@ const SERVICES = [
 
 /* ---------------- helpers ---------------- */
 
-// Try to BIND the port — succeeds only when it is genuinely free. Unlike a
-// connect() probe this also catches wedged/zombie listeners that accept no
-// connections (exactly the kind that once hid on port 8001).
+// Authoritative port ownership: read the OS connection table. A bind-probe
+// LIES on Windows — SO_REUSEADDR lets a second socket bind an already-taken
+// port, so probing "can I bind?" reported busy ports as free.
+function listeningPids(port) {
+  const pids = new Set();
+  if (process.platform === 'win32') {
+    const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8' });
+    if (r.status === 0) {
+      for (const line of r.stdout.split('\n')) {
+        if (!/LISTENING/i.test(line)) continue;
+        const cols = line.trim().split(/\s+/); // Proto Local Foreign State PID
+        const local = cols[1] || '';
+        if (local.endsWith(`:${port}`)) {
+          const pid = cols[cols.length - 1];
+          if (/^\d+$/.test(pid)) pids.add(pid);
+        }
+      }
+    }
+  } else {
+    const r = spawnSync('bash', ['-c', `lsof -ti TCP:${port} -sTCP:LISTEN 2>/dev/null || ss -ltnp 2>/dev/null | grep ":${port} "`], { encoding: 'utf8' });
+    if (r.status === 0) {
+      for (const m of r.stdout.match(/pid=(\d+)|\b(\d+)\b/g) || []) {
+        const pid = (m.match(/^pid=(\d+)$/) || [])[1] || m;
+        if (/^\d+$/.test(pid)) pids.add(pid);
+      }
+    }
+  }
+  return [...pids];
+}
+
 function portBusy(port) {
-  const tryBind = (host) => new Promise((resolve) => {
-    const s = net.createServer();
-    s.once('error', () => resolve(true)); // bind refused → someone holds it
-    s.once('listening', () => s.close(() => resolve(false)));
-    try { s.listen({ port, host }); } catch { resolve(true); }
-  });
-  return (async () => (await tryBind('127.0.0.1')) || (await tryBind('::1')))();
+  return listeningPids(port).length > 0;
 }
 
 // Non-invasive readiness probe: does something ACCEPT connections here?
@@ -108,28 +129,15 @@ function waitForPort(port, timeoutMs = 30000) {
 }
 
 function killPort(port) {
-  // Windows
-  const win = spawnSync('netstat', ['-ano'], { encoding: 'utf8' });
-  if (win.status === 0) {
-    const pids = new Set();
-    for (const line of win.stdout.split('\n')) {
-      if (line.includes(`:${port} `) && /LISTENING/i.test(line)) {
-        const pid = line.trim().split(/\s+/).pop();
-        if (pid && /^\d+$/.test(pid)) pids.add(pid);
-      }
+  const pids = listeningPids(port);
+  for (const pid of pids) {
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/F', '/T', '/PID', pid], { stdio: 'ignore' });
+    } else {
+      spawnSync('kill', ['-9', pid], { stdio: 'ignore' });
     }
-    for (const pid of pids) spawnSync('taskkill', ['/F', '/PID', pid], { stdio: 'ignore' });
-    if (pids.size) return pids.size;
   }
-  // Unix fallback
-  const unix = spawnSync('bash', ['-c', `lsof -ti :${port} 2>/dev/null || fuser ${port}/tcp 2>/dev/null`], { encoding: 'utf8' });
-  if (unix.status === 0 && unix.stdout.trim()) {
-    for (const pid of unix.stdout.trim().split('\n')) {
-      if (/^\d+$/.test(pid)) spawnSync('kill', ['-9', pid], { stdio: 'ignore' });
-    }
-    return 1;
-  }
-  return 0;
+  return pids.length;
 }
 
 function hasCommand(cmd, args = ['--version']) {
@@ -202,9 +210,8 @@ async function isOurs(svc) {
   if (!svc.health) return false;
   try {
     const r = await fetch(svc.health, { signal: AbortSignal.timeout(1500) });
-    const body = await r.text();
-    if (svc.name === 'server') return body.includes('land-record-api');
-    if (svc.name === 'ai') return body.includes('land-record-ai') || r.status === 401; // 401 = our key-guard
+    if (svc.name === 'server') return r.status === 200 && (await r.text()).includes('land-record-api');
+    if (svc.name === 'ai') return r.status === 401; // 401 = our API-key guard → our AI service
     return r.status === 200; // vite dev server responds 200 on /
   } catch {
     return false;
@@ -258,6 +265,15 @@ for (const s of SERVICES) {
 if (CHECK_ONLY) {
   console.log(color('green', '  ✓ pre-flight OK (nothing started — remove --check to launch)\n'));
   process.exit(0);
+}
+
+// Port conflicts discovered while scanning (foreign apps we were not allowed
+// to kill) must STOP the launch — never spawn into a busy port.
+if (problems.length) {
+  console.log(color('red', '  Cannot start:'));
+  for (const p of problems) console.log(color('red', '   ✗ ' + p));
+  console.log();
+  process.exit(1);
 }
 
 /* ---------------- launch ---------------- */
@@ -337,10 +353,11 @@ setTimeout(async () => {
   if (shuttingDown) return;
   console.log();
   for (const svc of started) {
-    const up = await waitForPort(svc.port, svc.name === 'ai' ? 25000 : 20000);
+    const child = children.find((c) => c.svc.name === svc.name)?.child;
+    const up = (await waitForPort(svc.port, svc.name === 'ai' ? 25000 : 20000)) && child && child.exitCode === null;
     if (up) console.log(color('green', `  ✓ ${svc.label} ready`));
     else if (svc.required) console.log(color('red', `  ✗ ${svc.label} did not come up on port ${svc.port}`));
-    else console.log(color('yellow', `  ⚠ ${svc.label} not up yet (optional) — check logs above`));
+    else console.log(color('yellow', `  ⚠ ${svc.label} not up (optional) — check logs above`));
   }
   console.log();
   console.log(color('bold', '  ──────────────────────────────────────────────'));
