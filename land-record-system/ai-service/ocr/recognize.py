@@ -35,16 +35,55 @@ except ImportError:  # pragma: no cover
     pass
 
 
+_WIN_TESSERACT_PATHS = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+)
+
+
 def _resolve_tesseract() -> str | None:
     cmd = os.getenv("TESSERACT_CMD", "").strip()
     if cmd:
         return cmd
-    return shutil.which("tesseract")
+    found = shutil.which("tesseract")
+    if found:
+        return found
+    # Fresh winget/UB-Mannheim installs aren't on PATH until a new shell —
+    # probe the standard Windows locations so no manual setup is needed.
+    for p in _WIN_TESSERACT_PATHS:
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+# Language packs shipped with the project (ai-service/tessdata/) — Indic
+# traineddata the installer doesn't include. Used when present so the
+# service is self-contained; falls back to the system tessdata otherwise.
+_PROJECT_TESSDATA = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tessdata"
+)
+
+
+def _resolve_tessdata() -> str:
+    """Return the tessdata dir to use, or '' for the system default.
+
+    Honours an explicit TESSDATA_DIR override from .env, else uses the
+    project-local pack folder when it looks complete (has eng.traineddata).
+    """
+    explicit = os.getenv("TESSDATA_DIR", "").strip()
+    if explicit and os.path.isfile(os.path.join(explicit, "eng.traineddata")):
+        return explicit
+    if os.path.isfile(os.path.join(_PROJECT_TESSDATA, "eng.traineddata")):
+        return _PROJECT_TESSDATA
+    return ""
 
 
 TESSERACT_AVAILABLE = _resolve_tesseract() is not None
 if TESSERACT_AVAILABLE:
     pytesseract.pytesseract.tesseract_cmd = _resolve_tesseract()
+_TESSDATA_DIR = _resolve_tessdata()
+if _TESSDATA_DIR:
+    os.environ["TESSDATA_PREFIX"] = _TESSDATA_DIR
 
 try:
     _langs = set(pytesseract.get_languages(config="")) if TESSERACT_AVAILABLE else set()
@@ -113,8 +152,13 @@ def _pick_ocr_langs(img, requested: str) -> tuple[str, list[str]]:
             if scripts["scripts"]:
                 notes.append(f"Script analysis: {', '.join(scripts['scripts'])}")
     usable = [p for p in packs if p in avail]
-    if not usable:
-        usable = ["eng"] if "eng" in avail else []
+    if not usable or set(usable) <= {"eng"}:
+        # Script detection is unreliable on small/synthetic pages (OSD needs
+        # ~300px of text). Widen to the most common scripts in Indian land
+        # records — Tesseract scores packs per word, so extra packs cost a
+        # little speed but stop Latin-only misreads of Devanagari pages.
+        broad = [l for l in ("eng", "hin", "ben") if l in avail]
+        usable = broad + [p for p in usable if p not in broad]
     return "+".join(usable) or "eng", notes
 
 

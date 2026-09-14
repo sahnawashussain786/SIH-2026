@@ -31,8 +31,16 @@ GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
 # Preferred model for new keys (Sep 2026). The _call() fallback chain also tries
 # well-known alternates automatically, so a retired pin never hard-breaks us.
 GEMINI_MODEL = (os.getenv("GEMINI_MODEL") or "gemini-3.6-flash").strip()
-FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash"]
+# Verified-alive alternates (Sep 2026). The _call() chain retries transient
+# errors per model and walks this list, so a busy or retired model never
+# hard-breaks us. gemini-flash-lite is the lighter sibling — slightly lower
+# quality but almost never capacity-limited.
+FALLBACK_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"]
 _ACTIVE_MODEL = GEMINI_MODEL
+# Total wall-clock budget for one Gemini call across all retries and model
+# fallbacks. Kept below the Node server's AI_TIMEOUT_MS (90s) with headroom
+# for request upload/processing time.
+_RETRY_BUDGET_S = 45.0
 
 # Populated lazily so the service still boots without the SDK installed.
 _genai = None
@@ -160,52 +168,66 @@ def _parse_json(raw: str) -> dict:
     return {}
 
 
-def _is_transient(err: Exception) -> bool:
-    """DNS blips / connection resets — worth retrying with backoff."""
+def _is_retryable(err: Exception) -> bool:
+    """Should this error be retried? Covers network blips AND Google-side
+    transient unavailability (429 rate-limit, 500, 503 'high demand').
+
+    503 'model is currently experiencing high demand' is a *capacity* error,
+    not a config error — it usually clears in seconds, so backoff + retry
+    (and fall across models) rather than failing the whole upload.
+    """
     msg = str(err).lower()
-    return any(t in msg for t in ("getaddrinfo", "temporary failure", "connection", "timed out", "timeout"))
+    network = ("getaddrinfo", "temporary failure", "connection", "timed out", "timeout")
+    http_transient = ("503", "429", "500", "unavailable", "resource_exhausted",
+                      "rate limit", "overloaded", "high demand", "internal error")
+    return any(t in msg for t in network + http_transient)
 
 
 def _call(parts: list, temperature: float = 0.0) -> str:
-    """Call Gemini with retries for transient network errors, walking a
-    fallback chain if a model version has been retired.
+    """Call Gemini with retries on transient errors (network blips, 429
+    rate-limits, 500/503 capacity overloads), walking a fallback chain of
+    models so a busy or retired model never hard-breaks the pipeline.
 
-    Google retires old model versions periodically; GEMINI_MODEL from .env is
-    tried first, then well-known current models, so an old pin never hard-breaks
-    the pipeline (it just logs which model actually answered).
+    Total wall-clock time is capped (see _call_once deadline) so the Node
+    server's AI timeout (AI_TIMEOUT_MS) never fires while we are still
+    legitimately retrying.
     """
-    last_err: Exception | None = None
-    for attempt in range(3):
-        try:
-            return _call_once(parts, temperature)
-        except Exception as e:
-            last_err = e
-            if attempt < 2 and _is_transient(e):
-                time.sleep(1.5 * (attempt + 1))  # 1.5s, 3s
-                continue
-            raise
-    raise last_err  # type: ignore[misc]
+    return _call_once(parts, temperature, deadline=time.time() + _RETRY_BUDGET_S)
 
 
-def _call_once(parts: list, temperature: float = 0.0) -> str:
+def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = None) -> str:
+    """Walk the model chain with limited per-model retries.
+
+    Retry policy per model: 2 attempts with a 2s pause. Transient errors
+    (503 high-demand, 429, network) retry / move to the next model; retired
+    models (404) move on immediately; everything else (bad key, bad request)
+    fails fast. The deadline keeps total time bounded so callers never wait
+    longer than they were configured to.
+    """
     if hasattr(_MODEL, "models"):  # new google-genai SDK
         candidates = [GEMINI_MODEL] + [m for m in FALLBACK_MODELS if m != GEMINI_MODEL]
         last_err: Exception | None = None
         for model in candidates:
-            try:
-                resp = _MODEL.models.generate_content(
-                    model=model,
-                    contents=[{"role": "user", "parts": parts}],
-                    config={"temperature": temperature},
-                )
-                globals()["_ACTIVE_MODEL"] = model
-                return resp.text or ""
-            except Exception as e:
-                last_err = e
-                msg = str(e)
-                # only fall through on model-availability problems
-                if "404" not in msg and "NOT_FOUND" not in msg and "no longer available" not in msg.lower():
-                    raise
+            for attempt in range(2):
+                try:
+                    resp = _MODEL.models.generate_content(
+                        model=model,
+                        contents=[{"role": "user", "parts": parts}],
+                        config={"temperature": temperature},
+                    )
+                    globals()["_ACTIVE_MODEL"] = model
+                    return resp.text or ""
+                except Exception as e:
+                    last_err = e
+                    msg = str(e)
+                    if not _is_retryable(e):
+                        if "404" in msg or "NOT_FOUND" in msg or "no longer available" in msg.lower():
+                            break  # retired model — try the next one now
+                        raise  # bad key / bad request — no point retrying
+                    if deadline is not None and time.time() > deadline:
+                        raise
+                    if attempt < 1:
+                        time.sleep(2)  # let the capacity spike pass
         raise last_err  # type: ignore[misc]
     # legacy google.generativeai SDK
     resp = _MODEL.generate_content(parts, generation_config={"temperature": temperature})

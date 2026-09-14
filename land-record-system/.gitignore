@@ -32,3 +32,6 @@ ai-service/.venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Tesseract language packs (fetched on demand — see ai-service/tessdata/README.md)
+ai-service/tessdata/*.traineddata

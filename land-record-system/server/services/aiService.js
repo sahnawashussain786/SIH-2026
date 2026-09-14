@@ -6,7 +6,7 @@ import { runValidation } from './validator.js';
 
 const AI_BASE = (process.env.AI_SERVICE_URL || 'http://localhost:8001').replace(/\/$/, '');
 const AI_KEY = process.env.AI_KEY || 'dev-ai-key';
-const AI_TIMEOUT = parseInt(process.env.AI_TIMEOUT_MS || '60000', 10);
+const AI_TIMEOUT = parseInt(process.env.AI_TIMEOUT_MS || '90000', 10);
 const FALLBACK_ENABLED = (process.env.AI_FALLBACK || 'true') === 'true';
 
 /** Ping the Python AI service */
