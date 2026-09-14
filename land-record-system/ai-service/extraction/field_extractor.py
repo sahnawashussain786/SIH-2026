@@ -23,8 +23,10 @@ PATTERNS: dict[str, list[str]] = {
         r"dag\s*(?:no|number|#)?[:\-]?\s*([0-9]{1,6})",
     ],
     "surveyNumber": [
-        r"survey\s*(?:no|number|#)?[:\-]?\s*([0-9a-z\-\/]{1,12})",
-        r"khasra\s*(?:no|number|#)?[:\-]?\s*([0-9a-z\-\/]{1,12})",
+        # value must start with a digit — otherwise "Survey No.: No" style
+        # label noise matches and "No" gets stored as the survey number
+        r"survey\s*(?:no|number|#)?[:\-]?\s*([0-9][0-9a-z\-\/]{0,11})",
+        r"khasra\s*(?:no|number|#)?[:\-]?\s*([0-9][0-9a-z\-\/]{0,11})",
     ],
     "area": [
         r"area[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*(acre|hectare|hect|bigha|katha|decimal|guntha|sq\.?\s*(?:yards?|feet?|meters?))?"
@@ -47,10 +49,32 @@ PATTERNS: dict[str, list[str]] = {
 }
 
 
+# A known label repeated INSIDE a captured value means the OCR ran lines
+# together ("Village: : Khasra No.: : 78/3 Tehsil: : Asansol"). The value is
+# only kept up to that embedded label — or rejected outright when the value
+# starts with one (meaning this line had no real value of its own).
+_EMBEDDED_LABEL = re.compile(
+    r"\b(?:khasra|khata|khatian|khatiyan|plot|dag|survey|tehsil|tahsil|"
+    r"district|zilla|village|mouza|block|circle|area|rageba|mutation|"
+    r"father|tenant)\s*(?:no\.?|number|#)?\s*[:\-–—]",
+    re.IGNORECASE,
+)
+
+
 def _clean(value: str | None) -> str:
     if not value:
         return ""
-    value = re.sub(r"\s{2,}", " ", value.replace("\n", " ")).strip(" |;,.")
+    # Collapse whitespace, then strip stray separators (":" and friends) that
+    # leak in when a document repeats the label, e.g. "Tehsil: : Asansol".
+    value = re.sub(r"\s{2,}", " ", value.replace("\n", " "))
+    value = re.sub(r"^\s*[:\-–—;,|]+\s*", "", value)  # leading separators
+    value = re.sub(r"\s*[:\-–—;,|]+\s*$", "", value)  # trailing separators
+    value = value.strip()
+    m = _EMBEDDED_LABEL.search(value)
+    if m:
+        if m.start() == 0:
+            return ""
+        value = value[: m.start()].strip(" ,;|-–—")
     return value[:120]
 
 

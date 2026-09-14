@@ -77,17 +77,22 @@ def _merge_extraction(
     gem_confs: list[dict],
     regex_scores: list[dict],
 ):
-    """Merge Gemini and regex extractions: Gemini first, regex fills gaps.
+    """Merge Gemini and regex extractions.
+
+    Gemini (the AI reader) wins whenever it produced a value — the regex
+    extractor is a heuristic that mis-captures on noisy OCR (label repeats,
+    "Survey No.: No" style junk). Regex fills ONLY the fields Gemini
+    could not find. When both agree, confidence gets a bump.
 
     Returns (merged_fields, field_confidences).
     """
     merged = dict(regex_fields)
-    used_gemini_for = []
+    from_gemini: set[str] = set()
     for k, v in (gem_fields or {}).items():
         v = (v or "").strip()
-        if v and not merged.get(k, "").strip():
+        if v:
             merged[k] = v
-            used_gemini_for.append(k)
+            from_gemini.add(k)
 
     conf_by_field = {c["field"]: c["confidence"] for c in (gem_confs or [])}
     regex_conf = {c["field"]: c["confidence"] for c in (regex_scores or [])}
@@ -95,10 +100,12 @@ def _merge_extraction(
     for k, v in merged.items():
         if not v:
             continue
-        if k in used_gemini_for:
+        if k in from_gemini:
             c = conf_by_field.get(k, 80.0)
-        elif k in conf_by_field:  # both agreed — bump confidence
-            c = min(99.0, conf_by_field[k] + 3.0)
+            if k not in (gem_fields or {}):  # shouldn't happen, defensive
+                c = regex_conf.get(k, 80.0)
+            elif regex_conf.get(k) and (regex_fields.get(k, "").strip() == v):
+                c = min(99.0, c + 3.0)  # both engines agree — bump
         else:
             c = regex_conf.get(k, 85.0)
         field_confidences.append(

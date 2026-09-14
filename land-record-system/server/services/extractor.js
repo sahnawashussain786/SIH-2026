@@ -67,8 +67,10 @@ const LABELS = {
     /പ്ലോട്ട്\s*(?:നം|#)?\s*[:\-]?\s*([0-9]{1,6})/,
   ],
   surveyNumber: [
-    /survey\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/i,
-    /khasra\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/i,
+    // value must start with a digit — stops label noise like "Survey No.: No"
+    // from being captured as the survey number
+    /survey\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9][0-9a-z\-\/]{0,11})/i,
+    /khasra\s*(?:no\.?|number|#)?\s*[:\-]?\s*([0-9][0-9a-z\-\/]{0,11})/i,
     /(?:खसरा|सर्वे)\s*(?:नं\.?|नंबर|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/,
     /(?:সর্বেক্ষণ|জরিপ)\s*(?:নং|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/,
     /సర్వే\s*(?:నం|#)?\s*[:\-]?\s*([0-9a-z\-\/]{1,12})/,
@@ -261,13 +263,25 @@ function firstMatch(text, patterns) {
   return '';
 }
 
+// A known label repeated INSIDE a captured value means the OCR ran lines
+// together ("Village: : Khasra No.: : 78/3 Tehsil: : Asansol"). Keep only the
+// part before the embedded label — or reject when the value starts with one.
+const EMBEDDED_LABEL = /\b(?:khasra|khata|khatian|khatiyan|plot|dag|survey|tehsil|tahsil|district|zilla|village|mouza|block|circle|area|rageba|mutation|father|tenant)\s*(?:no\.?|number|#)?\s*[:\-–—]/i;
+
 function clean(value) {
-  return String(value || '')
+  let v = String(value || '')
     .replace(/[\r\n]+/g, ' ')
     .replace(/\s{2,}/g, ' ')
+    .replace(/^\s*[:\-–—;,|]+\s*/, '') // leading separators (label repeats)
+    .replace(/\s*[:\-–—;,|]+\s*$/, '') // trailing separators
     .replace(/[|;]+$/, '')
-    .trim()
-    .slice(0, 120);
+    .trim();
+  const m = EMBEDDED_LABEL.exec(v);
+  if (m) {
+    if (m.index === 0) return '';
+    v = v.slice(0, m.index).replace(/[\s,;|\-–—]+$/, '').trim();
+  }
+  return v.slice(0, 120);
 }
 
 export function extractFieldsFromText(rawText) {
