@@ -60,15 +60,63 @@ export async function me(req, res) {
   res.json({ user: req.user.toSafeJSON() });
 }
 
-/** PUT /api/auth/me — update own profile (name, password) */
+/** PUT /api/auth/me — update own profile (name, department, district, state) */
 export async function updateMe(req, res, next) {
   try {
-    const { name, password } = req.body;
-    const user = await User.findById(req.user._id).select('+password');
-    if (name) user.name = name;
-    if (password) user.password = password;
+    const { name, department, district, state } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    if (name !== undefined) {
+      if (!String(name).trim()) return res.status(400).json({ message: 'Name cannot be empty.' });
+      user.name = String(name).trim();
+    }
+    if (department !== undefined) user.department = String(department).trim();
+    if (district !== undefined) user.district = String(district).trim();
+    if (state !== undefined) user.state = String(state).trim();
     await user.save();
+
+    await AuditLog.log({
+      actor: user._id,
+      actorName: user.name,
+      action: 'profile.update',
+      entityType: 'User',
+      entityId: user._id,
+      ip: req.ip,
+    });
     res.json({ user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PUT /api/auth/me/password — change own password (requires current password) */
+export async function changeMyPassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required.' });
+    }
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+    }
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    if (!(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+    user.password = newPassword; // hashed by the pre-save hook
+    await user.save();
+
+    await AuditLog.log({
+      actor: user._id,
+      actorName: user.name,
+      action: 'profile.password_change',
+      entityType: 'User',
+      entityId: user._id,
+      ip: req.ip,
+    });
+    res.json({ message: 'Password updated.' });
   } catch (err) {
     next(err);
   }

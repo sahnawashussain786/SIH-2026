@@ -1,9 +1,10 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   IconDashboard, IconUpload, IconDocument, IconVerification, IconRecords,
   IconAdmin, IconLogout, IconMenu, IconClose, IconLandmark, IconShieldSolid,
+  IconUser,
 } from './icons.js';
 
 const ROLE_LABELS = {
@@ -21,6 +22,7 @@ const NAV = [
   { to: '/documents', label: 'Documents', Icon: IconDocument, roles: 'all' },
   { to: '/verification', label: 'Verification', Icon: IconVerification, roles: ['data_entry_officer', 'digitization_operator', 'revenue_officer', 'senior_officer', 'admin'] },
   { to: '/records', label: 'Land Records', Icon: IconRecords, roles: 'all' },
+  { to: '/profile', label: 'My Profile', Icon: IconUser, roles: 'all' },
   { to: '/admin', label: 'Admin', Icon: IconAdmin, roles: ['admin'] },
 ];
 
@@ -76,10 +78,10 @@ export default function Layout() {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-bold uppercase text-slate-200">
               {user?.name?.charAt(0) || 'U'}
             </span>
-            <div className="min-w-0">
+            <Link to="/profile" className="min-w-0" title="Open my profile">
               <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
               <p className="truncate text-[11px] text-slate-400">{ROLE_LABELS[user?.role] || user?.role}</p>
-            </div>
+            </Link>
           </div>
           <button
             onClick={signOut}
@@ -156,14 +158,18 @@ export default function Layout() {
             <IconShieldSolid className="text-brand-600" />
             Government of India · Land Records Digitization Initiative
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-slate-100"
+            title="Open my profile"
+          >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
               {user?.name?.charAt(0) || 'U'}
             </span>
             <span className="font-semibold text-slate-700">{user?.name}</span>
             <span className="text-slate-300">·</span>
             <span className="text-slate-500">{ROLE_LABELS[user?.role] || user?.role}</span>
-          </div>
+          </Link>
         </header>
 
         <main className="flex-1 p-4 md:p-8">

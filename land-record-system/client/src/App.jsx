@@ -9,6 +9,7 @@ import DocumentDetail from './pages/DocumentDetail.jsx';
 import Verification from './pages/Verification.jsx';
 import LandRecords from './pages/LandRecords.jsx';
 import Admin from './pages/Admin.jsx';
+import Profile from './pages/Profile.jsx';
 
 const ROLE_LABELS = {
   data_entry_officer: 'Data Entry Officer',
@@ -72,6 +73,7 @@ export default function App() {
           }
         />
         <Route path="records" element={<LandRecords />} />
+        <Route path="profile" element={<Profile />} />
         <Route
           path="admin"
           element={

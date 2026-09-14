@@ -136,8 +136,6 @@ FIELDS = [
     "landType", "mutationDetails",
 ]
 
-_EXTRA_KEYS = ("documentLanguage", "documentScript")
-
 _MIME = {
     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
     ".webp": "image/webp", ".bmp": "image/bmp", ".tif": "image/tiff",
@@ -195,6 +193,24 @@ def _call(parts: list, temperature: float = 0.0) -> str:
     return _call_once(parts, temperature, deadline=time.time() + _RETRY_BUDGET_S)
 
 
+def _typed_parts(parts: list) -> list:
+    """Convert dict parts ({text}/{inline_data}) to typed SDK Part objects."""
+    from google.genai import types as gtypes
+
+    typed = []
+    for p in parts:
+        if "text" in p:
+            typed.append(gtypes.Part(text=p["text"]))
+        elif "inline_data" in p:
+            d = p["inline_data"]
+            typed.append(
+                gtypes.Part(inline_data=gtypes.Blob(mime_type=d.get("mime_type"), data=d.get("data")))
+            )
+        else:
+            typed.append(gtypes.Part(**p))
+    return typed
+
+
 def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = None) -> str:
     """Walk the model chain with limited per-model retries.
 
@@ -205,6 +221,16 @@ def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = N
     longer than they were configured to.
     """
     if hasattr(_MODEL, "models"):  # new google-genai SDK
+        # Typed Content + AFC disabled: the SDK warns when automatic function
+        # calling is left enabled on a direct Models.generate_content call
+        # (we never use function calling here, so switch it off explicitly).
+        from google.genai import types as gtypes
+
+        config = gtypes.GenerateContentConfig(
+            temperature=temperature,
+            automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(disable=True),
+        )
+        content = gtypes.Content(role="user", parts=_typed_parts(parts))
         candidates = [GEMINI_MODEL] + [m for m in FALLBACK_MODELS if m != GEMINI_MODEL]
         last_err: Exception | None = None
         for model in candidates:
@@ -212,8 +238,8 @@ def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = N
                 try:
                     resp = _MODEL.models.generate_content(
                         model=model,
-                        contents=[{"role": "user", "parts": parts}],
-                        config={"temperature": temperature},
+                        contents=[content],
+                        config=config,
                     )
                     globals()["_ACTIVE_MODEL"] = model
                     return resp.text or ""
@@ -318,10 +344,6 @@ def _split_parsed(parsed: dict, want_lang: bool = False):
     }
     if want_lang:
         return fields, conf_map, notes, lang_info
-    return fields, conf_map, notes
-    fields = {k: str(parsed.get(k, "") or "") for k in FIELDS}
-    conf_map = parsed.get("confidence") if isinstance(parsed.get("confidence"), dict) else {}
-    notes = str(parsed.get("notes", "") or "")
     return fields, conf_map, notes
 
 

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
 import {
-  IconSearch, IconChevronLeft, IconChevronRight, IconRecords, IconCheckSolid, IconOfficer, IconStamp,
+  IconSearch, IconChevronLeft, IconChevronRight, IconRecords, IconCheckSolid,
+  IconOfficer, IconStamp, IconClose, IconPin, IconUser, IconLayers,
+  IconCalendar, IconDocument, IconApproved,
 } from '../components/icons.js';
 
 const EMPTY = { q: '', district: '', village: '', landType: '' };
@@ -11,6 +14,9 @@ export default function LandRecords() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(EMPTY);
   const [error, setError] = useState('');
+  const [detail, setDetail] = useState(null); // full record from GET /records/:id
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
 
   const load = () => {
     const params = new URLSearchParams({ page, limit: 12 });
@@ -23,11 +29,39 @@ export default function LandRecords() {
 
   useEffect(load, [page, filters]);
 
+  const openDetail = (id) => {
+    setDetailLoading(true);
+    setDetailError('');
+    setDetail({ _id: id }); // open immediately with what we know
+    api
+      .get(`/records/${id}`)
+      .then((res) => setDetail(res.data.record))
+      .catch((err) => setDetailError(errMsg(err)))
+      .finally(() => setDetailLoading(false));
+  };
+
+  const closeDetail = () => {
+    setDetail(null);
+    setDetailError('');
+  };
+
+  // Close on Escape + lock background scroll while the modal is open
+  useEffect(() => {
+    if (!detail) return undefined;
+    const onKey = (e) => e.key === 'Escape' && closeDetail();
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [detail]);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="page-title">Digital Land Records</h1>
-        <p className="page-subtitle">Approved, verified records — searchable by owners, officers and citizens.</p>
+        <p className="page-subtitle">Approved, verified records — click any record for its full details.</p>
       </div>
 
       <div className="panel flex flex-wrap items-center gap-3 p-4">
@@ -81,7 +115,13 @@ export default function LandRecords() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.items.map((r) => (
-          <div key={r._id} className="panel p-5 transition hover:shadow-card-hover">
+          <button
+            key={r._id}
+            type="button"
+            onClick={() => openDetail(r._id)}
+            className="panel cursor-pointer p-5 text-left transition hover:-translate-y-0.5 hover:shadow-card-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            title="View full record"
+          >
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-semibold text-slate-900">{r.ownerName}</p>
@@ -109,7 +149,7 @@ export default function LandRecords() {
                 <IconStamp className="shrink-0" /> Mutation: {r.mutationDetails}
               </p>
             )}
-          </div>
+          </button>
         ))}
         {data.items.length === 0 && (
           <div className="panel flex flex-col items-center justify-center p-12 text-center text-slate-400 md:col-span-2 xl:col-span-3">
@@ -130,6 +170,147 @@ export default function LandRecords() {
           </button>
         </div>
       )}
+
+      {detail && (
+        <RecordDetailModal
+          record={detail}
+          loading={detailLoading}
+          error={detailError}
+          onClose={closeDetail}
+        />
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="rounded-lg bg-slate-50 px-3 py-2">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className="mt-0.5 break-words text-sm font-medium text-slate-800">{value || '—'}</dd>
+    </div>
+  );
+}
+
+function RecordDetailModal({ record, loading, error, onClose }) {
+  const src = record?.sourceDocument;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Land record details"
+    >
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="toast-slide relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+        {/* header */}
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/70 px-6 py-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+              <IconRecords className="text-xs" /> Land Record
+            </p>
+            <h2 className="truncate text-lg font-bold text-slate-900">{record.ownerName || 'Loading…'}</h2>
+            <p className="flex items-center gap-1 text-xs text-slate-500">
+              <IconPin className="text-[10px]" />
+              {[record.village, record.tehsil, record.district, record.state].filter(Boolean).join(', ') || '—'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close details"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-200/60 hover:text-slate-700"
+          >
+            <IconClose />
+          </button>
+        </div>
+
+        {/* body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {error && (
+            <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          )}
+          {loading && !error && (
+            <p className="py-6 text-center text-sm text-slate-400">Loading full record…</p>
+          )}
+          {!loading && !error && (
+            <>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                {record.approvedAutomatically ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 ring-1 ring-sky-100">
+                    <IconOfficer className="text-[10px]" /> Auto-accepted by AI
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                    <IconApproved className="text-[10px]" /> Officer verified
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                  {record.confidence ?? 0}% extraction confidence
+                </span>
+                {record.verifiedAt && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                    <IconCalendar className="text-[10px]" />
+                    Verified {new Date(record.verifiedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+
+              <dl className="grid gap-2 sm:grid-cols-2">
+                <Row label="Owner name" value={record.ownerName} />
+                <Row label="Father's name" value={record.fatherName} />
+                <Row label="Khatian / Khata no." value={record.khatianNumber} />
+                <Row label="Plot / Dag no." value={record.plotNumber} />
+                <Row label="Survey no." value={record.surveyNumber} />
+                <Row label="Area" value={record.area ? `${record.area} ${record.areaUnit || ''}`.trim() : ''} />
+                <Row label="Land type" value={record.landType} />
+                <Row label="Mutation" value={record.mutationDetails} />
+                <Row label="Village / Mouza" value={record.village} />
+                <Row label="Tehsil / Circle" value={record.tehsil} />
+                <Row label="District" value={record.district} />
+                <Row label="State" value={record.state} />
+                {record.gis?.lat != null && (
+                  <Row label="GIS location" value={`${record.gis.lat}, ${record.gis.lng}`} />
+                )}
+              </dl>
+
+              {src && (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <IconDocument className="shrink-0 text-slate-400" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Source document</p>
+                      <p className="truncate text-sm font-medium text-slate-700">{src.title || src.originalName || 'Untitled'}</p>
+                    </div>
+                  </div>
+                  {src._id && (
+                    <Link to={`/documents/${src._id}`} className="btn-secondary shrink-0 !px-3 !py-1.5 text-sm">
+                      Open document
+                    </Link>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* footer */}
+        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-6 py-3.5">
+          <p className="flex items-center gap-1.5 text-xs text-slate-400">
+            <IconUser className="text-xs" /> Record ID: {record._id?.slice(-8) || '—'}
+          </p>
+          <div className="flex gap-2">
+            {record.createdAt && (
+              <span className="hidden items-center gap-1 text-xs text-slate-400 sm:flex">
+                <IconLayers className="text-xs" />
+                Created {new Date(record.createdAt).toLocaleDateString('en-IN')}
+              </span>
+            )}
+            <button onClick={onClose} className="btn-primary !px-4 !py-1.5 text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
