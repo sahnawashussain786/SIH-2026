@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
+import { IconSearch, IconChevronLeft, IconChevronRight, IconArrowRight } from '../components/icons.js';
 
 export default function Documents() {
   const [data, setData] = useState({ items: [], total: 0, pages: 1 });
@@ -25,8 +26,8 @@ export default function Documents() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Documents</h1>
-        <p className="text-sm text-slate-500">All uploaded land-record documents and their AI processing status.</p>
+        <h1 className="page-title">Documents</h1>
+        <p className="page-subtitle">All uploaded land-record documents and their AI processing status.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -36,7 +37,7 @@ export default function Documents() {
             setPage(1);
             setFilters({ ...filters, status: e.target.value });
           }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="form-input w-44"
         >
           <option value="">All statuses</option>
           <option value="processing">Processing</option>
@@ -45,36 +46,39 @@ export default function Documents() {
           <option value="rejected">Rejected</option>
           <option value="failed">Failed</option>
         </select>
-        <input
-          value={filters.search}
-          onChange={(e) => {
-            setPage(1);
-            setFilters({ ...filters, search: e.target.value });
-          }}
-          placeholder="Search title, owner, village…"
-          className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        />
+        <div className="relative">
+          <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={filters.search}
+            onChange={(e) => {
+              setPage(1);
+              setFilters({ ...filters, search: e.target.value });
+            }}
+            placeholder="Search title, owner, village…"
+            className="form-input w-64 pl-10"
+          />
+        </div>
         <span className="text-sm text-slate-400">{data.total} documents</span>
       </div>
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="panel overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-4 py-3">Document</th>
-              <th className="px-4 py-3">Owner</th>
-              <th className="px-4 py-3">Village / District</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Confidence</th>
-              <th className="px-4 py-3">Uploaded</th>
+              <th className="px-4 py-3 font-semibold">Document</th>
+              <th className="px-4 py-3 font-semibold">Owner</th>
+              <th className="px-4 py-3 font-semibold">Village / District</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Confidence</th>
+              <th className="px-4 py-3 font-semibold">Uploaded</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {data.items.map((d) => (
-              <tr key={d._id} className="hover:bg-slate-50">
+              <tr key={d._id} className="transition hover:bg-slate-50/80">
                 <td className="px-4 py-3">
                   <p className="font-medium text-slate-800">{d.title}</p>
                   <p className="text-xs text-slate-400">{d.originalName} · {(d.size / 1024).toFixed(0)} KB</p>
@@ -89,7 +93,9 @@ export default function Documents() {
                 <td className="px-4 py-3">{d.overallConfidence ? <ConfidenceBadge value={d.overallConfidence} /> : <span className="text-slate-300">—</span>}</td>
                 <td className="px-4 py-3 text-xs text-slate-400">{new Date(d.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link to={`/documents/${d._id}`} className="text-sm font-medium text-brand-700 hover:underline">Open</Link>
+                  <Link to={`/documents/${d._id}`} className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+                    Open <IconArrowRight className="text-xs" />
+                  </Link>
                 </td>
               </tr>
             ))}
@@ -102,12 +108,12 @@ export default function Documents() {
 
       {data.pages > 1 && (
         <div className="flex items-center justify-between">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">
-            ← Prev
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn-secondary !px-3 !py-1.5">
+            <IconChevronLeft /> Prev
           </button>
           <span className="text-sm text-slate-500">Page {page} of {data.pages}</span>
-          <button disabled={page >= data.pages} onClick={() => setPage(page + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">
-            Next →
+          <button disabled={page >= data.pages} onClick={() => setPage(page + 1)} className="btn-secondary !px-3 !py-1.5">
+            Next <IconChevronRight />
           </button>
         </div>
       )}

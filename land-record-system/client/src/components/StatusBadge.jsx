@@ -1,14 +1,18 @@
+import {
+  IconClock, IconRefresh, IconCheckSolid, IconX, IconReject, IconCheck, IconEye, IconWarn, IconApproved,
+} from './icons.js';
+
 const MAP = {
-  uploaded: 'bg-slate-100 text-slate-700',
-  processing: 'bg-blue-100 text-blue-700',
-  processed: 'bg-sky-100 text-sky-700',
-  verified: 'bg-emerald-100 text-emerald-700',
-  rejected: 'bg-rose-100 text-rose-700',
-  failed: 'bg-rose-100 text-rose-700',
-  auto_accept: 'bg-emerald-100 text-emerald-700',
-  manual_review: 'bg-amber-100 text-amber-700',
-  mandatory_verification: 'bg-rose-100 text-rose-700',
-  approved: 'bg-emerald-100 text-emerald-700',
+  uploaded: { cls: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200', Icon: null },
+  processing: { cls: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100', Icon: IconClock },
+  processed: { cls: 'bg-sky-50 text-sky-700 ring-1 ring-sky-100', Icon: IconRefresh },
+  verified: { cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', Icon: IconCheckSolid },
+  rejected: { cls: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', Icon: IconReject },
+  failed: { cls: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', Icon: IconX },
+  auto_accept: { cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', Icon: IconApproved },
+  manual_review: { cls: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100', Icon: IconEye },
+  mandatory_verification: { cls: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', Icon: IconWarn },
+  approved: { cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', Icon: IconCheck },
 };
 
 const LABELS = {
@@ -25,8 +29,10 @@ const LABELS = {
 };
 
 export default function StatusBadge({ value }) {
+  const { cls, Icon } = MAP[value] || { cls: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200', Icon: null };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${MAP[value] || 'bg-slate-100 text-slate-700'}`}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {Icon && <Icon className="text-[11px]" />}
       {LABELS[value] || value}
     </span>
   );

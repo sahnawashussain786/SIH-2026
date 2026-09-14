@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, errMsg } from '../services/api.js';
+import {
+  IconUsers, IconAudit, IconChevronLeft, IconChevronRight, IconPlus,
+} from '../components/icons.js';
 
 const ROLE_LABELS = {
   data_entry_officer: 'Data Entry Officer',
@@ -67,41 +70,48 @@ export default function Admin() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Administration</h1>
-        <p className="text-sm text-slate-500">Manage users, roles and review the full audit trail.</p>
+        <h1 className="page-title">Administration</h1>
+        <p className="page-subtitle">Manage users, roles and review the full audit trail.</p>
       </div>
 
       <div className="flex gap-2">
-        {['users', 'audit'].map((t) => (
+        {[
+          { key: 'users', label: 'Users', Icon: IconUsers },
+          { key: 'audit', label: 'Audit Logs', Icon: IconAudit },
+        ].map(({ key, label, Icon }) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}
+            key={key}
+            onClick={() => setTab(key)}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              tab === key
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'bg-white text-slate-600 shadow-card ring-1 ring-slate-200/70 hover:bg-slate-50'
+            }`}
           >
-            {t === 'users' ? '👥 Users' : '📜 Audit Logs'}
+            <Icon className="text-base" /> {label}
           </button>
         ))}
       </div>
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-      {success && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+      {success && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-100">{success}</div>}
 
       {tab === 'users' && (
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200 lg:col-span-2">
+          <div className="panel overflow-hidden lg:col-span-2">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">District</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 font-semibold">User</th>
+                  <th className="px-4 py-3 font-semibold">Role</th>
+                  <th className="px-4 py-3 font-semibold">District</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map((u) => (
-                  <tr key={u._id}>
+                  <tr key={u._id} className="transition hover:bg-slate-50/80">
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{u.name}</p>
                       <p className="text-xs text-slate-400">{u.email}</p>
@@ -119,7 +129,9 @@ export default function Admin() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">{u.district || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${u.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        u.isActive ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500'
+                      }`}>
                         {u.isActive ? 'active' : 'disabled'}
                       </span>
                     </td>
@@ -134,8 +146,8 @@ export default function Admin() {
             </table>
           </div>
 
-          <form onSubmit={createUser} className="space-y-3 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <h2 className="font-semibold text-slate-800">Create user</h2>
+          <form onSubmit={createUser} className="panel space-y-3.5 p-6">
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900"><IconPlus className="text-brand-600" /> Create user</h2>
             {[
               ['name', 'Full name', 'text'],
               ['email', 'Email', 'email'],
@@ -144,53 +156,51 @@ export default function Admin() {
               ['state', 'State', 'text'],
             ].map(([key, label, type]) => (
               <div key={key}>
-                <label className="mb-1 block text-sm font-medium text-slate-600">{label}</label>
+                <label className="form-label">{label}</label>
                 <input
                   type={type}
                   value={newUser[key]}
                   onChange={(e) => setNewUser({ ...newUser, [key]: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="form-input"
                   required={key === 'name' || key === 'email' || key === 'password'}
                 />
               </div>
             ))}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Role</label>
+              <label className="form-label">Role</label>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="form-input"
               >
                 {Object.entries(ROLE_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
             </div>
-            <button type="submit" className="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-              Create user
-            </button>
+            <button type="submit" className="btn-primary w-full">Create user</button>
           </form>
         </div>
       )}
 
       {tab === 'audit' && (
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="panel overflow-hidden">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="px-4 py-3">When</th>
-                <th className="px-4 py-3">Actor</th>
-                <th className="px-4 py-3">Action</th>
-                <th className="px-4 py-3">Entity</th>
-                <th className="px-4 py-3">Details</th>
+                <th className="px-4 py-3 font-semibold">When</th>
+                <th className="px-4 py-3 font-semibold">Actor</th>
+                <th className="px-4 py-3 font-semibold">Action</th>
+                <th className="px-4 py-3 font-semibold">Entity</th>
+                <th className="px-4 py-3 font-semibold">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {logs.items.map((l) => (
-                <tr key={l._id}>
+                <tr key={l._id} className="transition hover:bg-slate-50/80">
                   <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{new Date(l.createdAt).toLocaleString()}</td>
                   <td className="px-4 py-3">{l.actorName}</td>
-                  <td className="px-4 py-3"><code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{l.action}</code></td>
+                  <td className="px-4 py-3"><code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">{l.action}</code></td>
                   <td className="px-4 py-3 text-xs text-slate-500">{l.entityType}</td>
                   <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-500">{JSON.stringify(l.details)}</td>
                 </tr>
@@ -202,9 +212,13 @@ export default function Admin() {
           </table>
           {logs.pages > 1 && (
             <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-              <button disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">← Prev</button>
+              <button disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)} className="btn-secondary !px-3 !py-1.5">
+                <IconChevronLeft /> Prev
+              </button>
               <span className="text-sm text-slate-500">Page {logPage} of {logs.pages}</span>
-              <button disabled={logPage >= logs.pages} onClick={() => setLogPage(logPage + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Next →</button>
+              <button disabled={logPage >= logs.pages} onClick={() => setLogPage(logPage + 1)} className="btn-secondary !px-3 !py-1.5">
+                Next <IconChevronRight />
+              </button>
             </div>
           )}
         </div>

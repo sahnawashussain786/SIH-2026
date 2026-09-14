@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
+import { IconChevronLeft, IconChevronRight, IconCheckSolid } from '../components/icons.js';
 
 export default function Verification() {
   const [data, setData] = useState({ items: [], total: 0, pages: 1 });
@@ -24,8 +25,8 @@ export default function Verification() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Verification Queue</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="page-title">Verification Queue</h1>
+        <p className="page-subtitle">
           Documents routed by the confidence engine: 70–90% manual review · &lt;70% mandatory verification.
         </p>
       </div>
@@ -39,6 +40,7 @@ export default function Verification() {
               setPage(1);
               setPriority(e.target.checked ? 'high' : '');
             }}
+            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30"
           />
           Show only mandatory-verification (low confidence)
         </label>
@@ -52,10 +54,10 @@ export default function Verification() {
           <Link
             key={d._id}
             to={`/documents/${d._id}`}
-            className="block rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-brand-500"
+            className="panel group p-5 transition hover:-translate-y-0.5 hover:shadow-card-hover hover:ring-brand-300"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="font-semibold text-slate-800">{d.title}</p>
+              <p className="font-semibold text-slate-900">{d.title}</p>
               <StatusBadge value={d.stage} />
             </div>
             <p className="mt-1 text-xs text-slate-400">{d.originalName}</p>
@@ -65,24 +67,30 @@ export default function Verification() {
               <div className="flex justify-between"><dt className="text-slate-500">Plot</dt><dd className="font-medium">{d.extracted?.plotNumber || '—'}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">Village</dt><dd className="font-medium">{d.extracted?.village || '—'}</dd></div>
             </dl>
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
               <ConfidenceBadge value={d.overallConfidence} />
               <span className="text-xs text-slate-400">{(d.validation?.errors || []).length} errors</span>
             </div>
           </Link>
         ))}
         {data.items.length === 0 && (
-          <div className="rounded-xl bg-white p-10 text-center text-slate-400 ring-1 ring-slate-200 md:col-span-2 xl:col-span-3">
-            🎉 Queue is clear — nothing awaiting verification.
+          <div className="panel flex flex-col items-center justify-center p-12 text-center text-slate-400 md:col-span-2 xl:col-span-3">
+            <IconCheckSolid className="text-3xl text-emerald-500" />
+            <p className="mt-3 text-sm font-medium text-slate-600">Queue is clear</p>
+            <p className="text-xs">Nothing awaiting verification.</p>
           </div>
         )}
       </div>
 
       {data.pages > 1 && (
         <div className="flex items-center justify-between">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">← Prev</button>
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn-secondary !px-3 !py-1.5">
+            <IconChevronLeft /> Prev
+          </button>
           <span className="text-sm text-slate-500">Page {page} of {data.pages}</span>
-          <button disabled={page >= data.pages} onClick={() => setPage(page + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Next →</button>
+          <button disabled={page >= data.pages} onClick={() => setPage(page + 1)} className="btn-secondary !px-3 !py-1.5">
+            Next <IconChevronRight />
+          </button>
         </div>
       )}
     </div>

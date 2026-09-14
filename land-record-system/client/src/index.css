@@ -1,7 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   @apply bg-slate-100 text-slate-800 antialiased;
+}
+
+@layer components {
+  /* Shared form controls — used across every page */
+  .form-input {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+  }
+  .form-label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  /* Shared card panel */
+  .panel {
+    @apply rounded-xl bg-white shadow-card ring-1 ring-slate-200/70;
+  }
+
+  /* Primary / secondary / subtle buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus:ring-brand-500/40;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus:ring-slate-400/30;
+  }
+  .btn-success {
+    @apply btn bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus:ring-emerald-500/40;
+  }
+  .btn-danger {
+    @apply btn bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus:ring-rose-500/40;
+  }
+
+  /* Page header block */
+  .page-title {
+    @apply text-xl font-bold tracking-tight text-slate-900 md:text-2xl;
+  }
+  .page-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+}
+
+/* Refined scrollbars (WebKit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.5);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139 / 0.7);
 }
