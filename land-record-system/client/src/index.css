@@ -48,6 +48,21 @@ body {
   }
 }
 
+/* Toast entrance animation */
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.toast-slide {
+  animation: toast-slide-in 0.28s cubic-bezier(0.21, 1.02, 0.73, 1);
+}
+
 /* Refined scrollbars (WebKit) */
 ::-webkit-scrollbar {
   width: 8px;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
+import { useToast } from '../context/ToastContext.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
 import DocumentViewer from '../components/DocumentViewer.jsx';
@@ -27,6 +28,7 @@ const FIELD_LABELS = {
 export default function DocumentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [doc, setDoc] = useState(null);
   const [form, setForm] = useState({});
   const [note, setNote] = useState('');
@@ -56,13 +58,18 @@ export default function DocumentDetail() {
     try {
       const res = await api.put(`/verification/${id}`, { action, extracted: form, note });
       setDoc(res.data.document);
-      setSuccess(
+      const msg =
         action === 'approve' ? 'Record approved and saved to Land Records.'
         : action === 'reject' ? 'Document rejected.'
-        : 'Edits saved and data re-validated.'
-      );
+        : 'Edits saved and data re-validated.';
+      setSuccess(msg);
+      if (action === 'approve') toast.success(msg, { title: 'Record approved' });
+      else if (action === 'reject') toast.warning(msg, { title: 'Document rejected' });
+      else toast.info(msg, { title: 'Changes saved' });
     } catch (err) {
-      setError(errMsg(err));
+      const m = errMsg(err);
+      setError(m);
+      toast.error(m, { title: 'Action failed', duration: 8000 });
     } finally {
       setBusy(false);
     }

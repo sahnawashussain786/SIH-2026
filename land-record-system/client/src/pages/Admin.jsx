@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, errMsg } from '../services/api.js';
+import { useToast } from '../context/ToastContext.jsx';
 import {
   IconUsers, IconAudit, IconChevronLeft, IconChevronRight, IconPlus,
 } from '../components/icons.js';
@@ -23,6 +24,7 @@ export default function Admin() {
   const [newUser, setNewUser] = useState(EMPTY_USER);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const toast = useToast();
 
   const loadUsers = () => api.get('/admin/users').then((r) => setUsers(r.data.items)).catch((e) => setError(errMsg(e)));
   const loadLogs = () => api.get(`/admin/audit-logs?page=${logPage}&limit=15`).then((r) => setLogs(r.data)).catch((e) => setError(errMsg(e)));
@@ -40,9 +42,11 @@ export default function Admin() {
     try {
       await api.post('/admin/users', newUser);
       setSuccess(`User ${newUser.email} created.`);
+      toast.success(`${newUser.name || newUser.email} can now sign in.`, { title: 'User created' });
       setNewUser(EMPTY_USER);
       loadUsers();
     } catch (err) {
+      toast.error(errMsg(err), { title: 'Could not create user', duration: 8000 });
       setError(errMsg(err));
     }
   };
@@ -51,8 +55,10 @@ export default function Admin() {
     setError('');
     try {
       await api.put(`/admin/users/${u._id}`, { isActive: !u.isActive });
+      toast.success(`${u.name} ${u.isActive ? 'disabled' : 'enabled'} successfully.`, { title: 'User updated' });
       loadUsers();
     } catch (err) {
+      toast.error(errMsg(err), { title: 'Update failed' });
       setError(errMsg(err));
     }
   };
@@ -61,8 +67,10 @@ export default function Admin() {
     setError('');
     try {
       await api.put(`/admin/users/${u._id}`, { role });
+      toast.success(`${u.name} is now ${ROLE_LABELS[role] || role}.`, { title: 'Role updated' });
       loadUsers();
     } catch (err) {
+      toast.error(errMsg(err), { title: 'Role change failed' });
       setError(errMsg(err));
     }
   };

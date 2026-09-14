@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
+import { useToast } from '../context/ToastContext.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import {
@@ -69,16 +70,21 @@ export default function UploadDocument() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [doneSteps, setDoneSteps] = useState([]);
+  const toast = useToast();
 
   const pickFile = (f) => {
     if (!f) return;
     const ok = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/tiff', 'text/plain'];
     if (!ok.includes(f.type)) {
-      setError('Only PDF, PNG, JPG, WEBP, TIFF or plain-text transcript files are allowed.');
+      const m = 'Only PDF, PNG, JPG, WEBP, TIFF or plain-text transcript files are allowed.';
+      setError(m);
+      toast.warning(m, { title: 'Unsupported file type' });
       return;
     }
     if (f.size > 15 * 1024 * 1024) {
-      setError('File too large (max 15 MB).');
+      const m = 'File too large (max 15 MB).';
+      setError(m);
+      toast.warning(m, { title: 'File too large' });
       return;
     }
     setError('');
@@ -116,9 +122,16 @@ export default function UploadDocument() {
       clearInterval(timer);
       setDoneSteps(PIPELINE_STEPS.map((s) => s.key));
       setResult(res.data);
+      const d = res.data.document;
+      toast.success(
+        `"${d.title || file.name}" processed at ${d.overallConfidence}% confidence — ${d.stage === 'auto_accept' ? 'auto-accepted as a land record' : 'sent for review'}.`,
+        { title: 'Extraction complete' }
+      );
     } catch (err) {
       clearInterval(timer);
-      setError(errMsg(err));
+      const m = errMsg(err);
+      setError(m);
+      toast.error(m, { title: 'Upload failed', duration: 8000 });
     } finally {
       setBusy(false);
     }

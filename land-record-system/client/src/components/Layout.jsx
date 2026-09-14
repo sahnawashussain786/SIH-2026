@@ -45,8 +45,10 @@ export default function Layout() {
             <IconLandmark className="text-lg" />
           </span>
           <div>
-            <h1 className="text-sm font-bold leading-tight text-white">Land Record System</h1>
-            <p className="text-[11px] tracking-wide text-slate-400">Digitization &amp; Validation</p>
+            <h1 className="text-base font-bold leading-tight tracking-tight text-white">
+              BHOOMI<span className="text-brand-400">-AI</span>
+            </h1>
+            <p className="text-[11px] tracking-wide text-slate-400">Land Record Intelligence</p>
           </div>
         </div>
 
@@ -98,7 +100,9 @@ export default function Layout() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-white">
                   <IconLandmark />
                 </span>
-                <span className="text-sm font-bold text-white">Land Record System</span>
+                <span className="text-base font-bold text-white">
+                  BHOOMI<span className="text-brand-400">-AI</span>
+                </span>
               </div>
               <button onClick={() => setNavOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white">
                 <IconClose />
@@ -138,7 +142,7 @@ export default function Layout() {
               <IconMenu />
             </button>
             <span className="flex items-center gap-2 font-bold text-slate-900">
-              <IconLandmark className="text-brand-600" /> LRS
+              <IconLandmark className="text-brand-600" /> BHOOMI-AI
             </span>
           </div>
           <button onClick={signOut} className="flex items-center gap-1.5 text-sm font-medium text-brand-700">
