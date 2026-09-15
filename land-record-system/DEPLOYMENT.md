@@ -1,5 +1,29 @@
 # Deploying BHOOMI-AI to Vercel
 
+## ✅ LIVE DEPLOYMENT (deployed Sep 15, 2026 via Vercel CLI)
+
+| What | URL |
+|---|---|
+| **Website** | https://bhoomi-ai.vercel.app |
+| **API** | https://bhoomi-ai-api.vercel.app/api |
+| Health check | https://bhoomi-ai-api.vercel.app/api/health |
+| Login | `officer@lrs.gov.in` / `Officer@123` |
+
+- Vercel projects: `bhoomi-ai` (client) and `bhoomi-ai-api` (server), account `sahnawashussain786`
+- Env vars were set via CLI and are stored as hidden secrets
+- **SSO Deployment Protection was disabled on both projects** via the API (Vercel's
+  new-project default gates every URL behind a Vercel login — re-enable only if you
+  want a private demo)
+- ⚠️ Production currently **shares the same MongoDB Atlas database as local dev**
+  (the local `MONGO_URI` was reused). Create a separate cluster/database for real
+  production data if needed.
+- **To ship an update:** `npx vercel --prod` inside `server/` (API) or `client/` (site).
+  The projects were linked via CLI, so pushes to GitHub do NOT auto-deploy — either
+  run the CLI command or connect the projects to the GitHub repo in the Vercel
+  dashboard (Settings → Git) to enable auto-deploys.
+
+---
+
 The project deploys as **two Vercel projects** from this one repo:
 
 | Project | Root | Framework | What it is |
