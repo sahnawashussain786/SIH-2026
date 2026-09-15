@@ -8,6 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let currentMode = null;
 let memServer = null; // embedded instance (for clean shutdown)
 
+const IS_SERVERLESS = Boolean(process.env.VERCEL);
+
 /**
  * Connect to MongoDB (idempotent). Strategy, in order:
  *   1. MONGO_URI (e.g. MongoDB Atlas) — best, data in the cloud
@@ -16,12 +18,22 @@ let memServer = null; // embedded instance (for clean shutdown)
  *      survives restarts, works fully offline. Its server binary is
  *      downloaded once on first use (see the TLS note below).
  *   4. Last resort: throwaway in-memory MongoDB (demo only, never persisted).
+ *
+ * On serverless (Vercel) only strategy 1 exists: no local mongod can be
+ * spawned and the filesystem is ephemeral — a missing MONGO_URI is a
+ * configuration error, not something to fall back from.
  */
 export async function connectDB() {
   if (mongoose.connection.readyState === 1 && currentMode) return currentMode;
 
   mongoose.set('strictQuery', true);
   const uri = process.env.MONGO_URI || '';
+
+  if (IS_SERVERLESS && !uri) {
+    throw new Error(
+      'MONGO_URI is required on Vercel — create a free MongoDB Atlas cluster and set MONGO_URI in your project environment variables.'
+    );
+  }
 
   if (uri) {
     try {
@@ -45,10 +57,12 @@ export async function connectDB() {
   }
 
   try {
+    if (IS_SERVERLESS) throw new Error('embedded MongoDB is not available on serverless');
     await startEmbedded();
     currentMode = 'embedded';
     return currentMode;
   } catch (err) {
+    if (IS_SERVERLESS) throw err; // no more strategies left on serverless
     console.warn(`[db] Embedded MongoDB unavailable (${err.message.split('\n')[0]})`);
   }
 

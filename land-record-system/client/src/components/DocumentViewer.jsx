@@ -1,5 +1,11 @@
+import { API_BASE } from '../services/api.js';
+
 export default function DocumentViewer({ doc }) {
-  const url = `/uploads/${doc.storedName}`;
+  // GridFS-backed endpoint (works in dev via the Vite proxy and on Vercel via
+  // the deployed API) — falls back to the legacy /uploads path for old records.
+  const url = doc.fileUrl && !doc.fileUrl.includes('pending')
+    ? (doc.fileUrl.startsWith('http') ? doc.fileUrl : `${API_BASE}${doc.fileUrl}`)
+    : `/uploads/${doc.storedName}`;
   const isImage = doc.mimeType?.startsWith('image/');
   const isPdf = doc.mimeType === 'application/pdf';
 

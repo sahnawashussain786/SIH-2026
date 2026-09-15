@@ -1,12 +1,18 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const UPLOAD_DIR = path.resolve(__dirname, '..', process.env.UPLOAD_DIR || 'uploads');
 
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Best-effort disk mirror for local serving/preview. On Vercel the filesystem
+// is read-only outside /tmp and ephemeral, so failures are silently ignored —
+// the authoritative copy of every upload lives in GridFS (the database).
+try {
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+} catch { /* read-only FS (serverless) — GridFS handles persistence */ }
 
 const ALLOWED = new Set([
   'application/pdf',
@@ -18,16 +24,9 @@ const ALLOWED = new Set([
   'text/plain', // OCR text transcripts / sidecar files (offline demo mode)
 ]);
 
-const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname) || '';
-    const base = path.basename(file.originalname, ext).replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60);
-    cb(null, `${Date.now()}-${base}${ext}`);
-  },
-});
+// Memory storage: works on any host (Vercel serverless has an ephemeral FS).
+// The buffer feeds the AI pipeline directly; persistence is via GridFS.
+const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
@@ -40,3 +39,10 @@ export const upload = multer({
     cb(null, true);
   },
 });
+
+/** Canonical stored filename for an upload (GridFS + disk mirror + DB). */
+export function storedFilename(originalName) {
+  const ext = path.extname(originalName || '') || '';
+  const base = path.basename(originalName || 'file', ext).replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60);
+  return `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${base}${ext}`;
+}

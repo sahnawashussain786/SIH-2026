@@ -3,13 +3,19 @@ import fs from 'fs';
 import path from 'path';
 import { extractFieldsFromText, detectLanguages, languageNames } from './extractor.js';
 import { runValidation } from './validator.js';
+import { geminiExtractImage, geminiExtractText, geminiStatus } from './geminiClient.js';
 
 const AI_BASE = (process.env.AI_SERVICE_URL || 'http://localhost:8001').replace(/\/$/, '');
 const AI_KEY = process.env.AI_KEY || 'dev-ai-key';
 const AI_TIMEOUT = parseInt(process.env.AI_TIMEOUT_MS || '90000', 10);
 const FALLBACK_ENABLED = (process.env.AI_FALLBACK || 'true') === 'true';
+// Gemini-direct can be turned off with GEMINI_DIRECT=false (then the Python
+// AI service is the primary engine again, as in local dev with Tesseract).
+const GEMINI_DIRECT = (process.env.GEMINI_DIRECT || 'true') === 'true';
 
-/** Ping the Python AI service */
+export { geminiStatus };
+
+/** Ping the Python AI service (health checks only — not on the upload path). */
 export async function pingAI() {
   const { data } = await axios.get(`${AI_BASE}/health`, {
     timeout: 5000,
@@ -19,15 +25,35 @@ export async function pingAI() {
 }
 
 /**
- * Process a document: send file to Python AI service.
- * If the service is unreachable and fallback is enabled, run a Node-side
- * heuristic extraction so the workflow still completes (offline demo mode).
+ * Process a document. Extraction chain, in order:
+ *
+ *   1. Gemini DIRECT from Node (needs only GEMINI_API_KEY — works everywhere,
+ *      including Vercel serverless; handles every Indic script natively).
+ *   2. Python AI service (FastAPI + Tesseract cross-check) — local dev only.
+ *   3. Node heuristic extractor (offline demo mode, no network needed).
+ *
+ * `fileBuffer` is the raw upload bytes (multer memory storage) — the function
+ * never depends on the file being present on disk, which matters on ephemeral
+ * serverless filesystems.
  */
-export async function processDocument(doc) {
+export async function processDocument(doc, fileBuffer) {
   const started = Date.now();
+  const buffer = fileBuffer ?? safeRead(doc.filePath);
+
+  // ---- Tier 1: Gemini direct from Node ------------------------------------
+  if (GEMINI_DIRECT) {
+    try {
+      const result = await geminiDirectProcess(doc, buffer, started);
+      if (result) return result;
+    } catch (err) {
+      console.warn('[ai] Gemini-direct failed, trying next engine —', err.message);
+    }
+  }
+
+  // ---- Tier 2: Python AI service (local dev / Tesseract cross-check) ------
   try {
     const form = new FormData();
-    form.append('file', new Blob([fs.readFileSync(doc.filePath)]), doc.originalName);
+    form.append('file', new Blob([buffer ?? new Uint8Array()]), doc.originalName);
     form.append('document_type', doc.documentType || 'Khatian');
     form.append('language', doc.language || 'auto');
     if (doc.district) form.append('district_hint', doc.district);
@@ -49,10 +75,58 @@ export async function processDocument(doc) {
     };
   } catch (err) {
     if (!FALLBACK_ENABLED) {
-      throw new Error(`AI service unavailable: ${err.message}`);
+      throw new Error(`AI extraction unavailable: ${err.message}`);
     }
     console.warn('[ai] service unreachable, using Node fallback extractor —', err.message);
     return fallbackProcess(doc, started);
+  }
+}
+
+/** Tier 1 impl. Returns null when Gemini produced nothing (→ next engine). */
+async function geminiDirectProcess(doc, buffer, started) {
+  const isText = doc.mimeType === 'text/plain' || /\.txt$/i.test(doc.originalName || '');
+  const result = isText
+    ? await geminiExtractText(buffer ? buffer.toString('utf8') : '')
+    : await geminiExtractImage(buffer, doc.originalName, doc.documentType);
+
+  if (!result.fieldConfidences.length) {
+    if (result.warnings.length) console.warn('[ai] gemini-direct:', result.warnings.join(' | '));
+    return null; // no fields → let the next engine try
+  }
+
+  const extracted = result.fields;
+  if (doc.district && !extracted.district) extracted.district = doc.district;
+  if (doc.state && !extracted.state) extracted.state = doc.state;
+
+  const langs = [result.langInfo?.language].filter(Boolean).flatMap((l) => l.split(','));
+  return {
+    engine: 'gemini-direct',
+    success: true,
+    extracted,
+    fieldConfidences: result.fieldConfidences,
+    overallConfidence: result.overallConfidence,
+    validation: runValidation(extracted, []),
+    ocrText: isText ? (buffer || '').toString('utf8').slice(0, 24000) : '',
+    aiMeta: {
+      engine: 'gemini-direct',
+      language: result.langInfo?.language || langs[0] || 'en',
+      languageName: languageNames(langs.length ? langs : ['en'])[0] || 'English',
+      languages: langs.length ? langs : ['en'],
+      script: result.langInfo?.script || '',
+      documentType: doc.documentType || 'Khatian',
+      preprocessed: false,
+      pipeline: isText ? ['gemini-direct:text'] : ['gemini-direct:vision'],
+      warnings: result.warnings || [],
+      processingMs: (result.processingMs || Date.now() - started),
+    },
+  };
+}
+
+function safeRead(p) {
+  try {
+    return fs.readFileSync(p);
+  } catch {
+    return null;
   }
 }
 
@@ -60,12 +134,12 @@ export async function processDocument(doc) {
  * Node-side fallback: parse any existing sidecar text (.txt next to upload)
  * produced by a real OCR, else derive a plausible record from filename.
  * This keeps the end-to-end flow (upload → extract → validate → review)
- * demonstrable without Python/OCR binaries installed.
+ * demonstrable without Gemini, Python, or OCR binaries.
  */
 function fallbackProcess(doc, started) {
   let text = '';
   const sidecar = path.join(path.dirname(doc.filePath), path.basename(doc.filePath, path.extname(doc.filePath)) + '.txt');
-  if (fs.existsSync(sidecar)) {
+  if (doc.filePath && fs.existsSync(sidecar)) {
     text = fs.readFileSync(sidecar, 'utf8');
   } else {
     text = synthesizeTextFromName(doc.originalName);
@@ -107,7 +181,7 @@ function fallbackProcess(doc, started) {
       documentType: doc.documentType || 'Khatian',
       preprocessed: false,
       pipeline: ['fallback-extraction'],
-      warnings: ['Python AI service unreachable — heuristic Node extractor used.'],
+      warnings: ['Gemini and Python AI service unavailable — heuristic Node extractor used.'],
       processingMs: Date.now() - started,
     },
   };

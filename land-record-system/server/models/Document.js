@@ -32,6 +32,7 @@ const documentSchema = new mongoose.Schema(
     storedName: { type: String, default: '' },
     filePath: { type: String, default: '' },
     fileUrl: { type: String, default: '' },
+    gridFsId: { type: String, default: '' }, // GridFS _id (authoritative storage)
     mimeType: { type: String, default: 'application/octet-stream' },
     size: { type: Number, default: 0 },
     documentType: { type: String, default: 'Khatian' },

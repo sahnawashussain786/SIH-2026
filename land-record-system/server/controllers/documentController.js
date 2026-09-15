@@ -3,6 +3,8 @@ import LandRecord from '../models/LandRecord.js';
 import AuditLog from '../models/AuditLog.js';
 import { processDocument } from '../services/aiService.js';
 import { runValidation, confidenceRoute, findDuplicates } from '../services/validator.js';
+import { putFile, getFile, deleteFile } from '../services/fileStore.js';
+import { storedFilename } from '../middleware/upload.js';
 
 /** POST /api/documents/upload — upload + immediately run AI pipeline */
 export async function uploadDocument(req, res, next) {
@@ -11,11 +13,23 @@ export async function uploadDocument(req, res, next) {
 
     const { documentType = 'Khatian', language = 'auto', district = '', state = '', title } = req.body;
 
+    // Persist the upload bytes in GridFS (works on any host — Vercel has no
+    // writable persistent disk). A best-effort disk mirror keeps local dev
+    // previews identical to before.
+    const storedName = storedFilename(req.file.originalname);
+    let gridFsId = null;
+    try {
+      gridFsId = await putFile(req.file.buffer, storedName, { mimeType: req.file.mimetype });
+    } catch (err) {
+      console.warn('[files] GridFS storage failed — continuing (disk mirror only):', err.message);
+    }
+
     const doc = await Document.create({
       title: title || req.file.originalname,
       originalName: req.file.originalname,
-      storedName: req.file.filename,
-      filePath: req.file.path,
+      storedName,
+      fileUrl: `/api/documents/${gridFsId || 'pending'}/file`,
+      gridFsId,
       mimeType: req.file.mimetype,
       size: req.file.size,
       documentType,
@@ -37,10 +51,11 @@ export async function uploadDocument(req, res, next) {
       ip: req.ip,
     });
 
-    // Fire the AI pipeline synchronously (keeps demo flow simple & reliable)
+    // Fire the AI pipeline synchronously with the in-memory buffer
+    // (nothing needs to exist on disk — works on serverless).
     let result;
     try {
-      result = await processDocument(doc);
+      result = await processDocument(doc, req.file.buffer);
     } catch (err) {
       doc.status = 'failed';
       doc.stage = 'ai_failed';
@@ -142,7 +157,7 @@ export async function listDocuments(req, res, next) {
   }
 }
 
-/** GET /api/documents/:id */
+/** GET /api/documents/:id — :id may be a document id or a GridFS file id */
 export async function getDocument(req, res, next) {
   try {
     const doc = await Document.findById(req.params.id)
@@ -158,6 +173,23 @@ export async function getDocument(req, res, next) {
   }
 }
 
+/**
+ * GET /api/documents/file/:fileId — stream an uploaded file out of GridFS.
+ * Used by the in-app viewer via doc.fileUrl; replaces serving from /uploads.
+ */
+export async function getFileById(req, res, next) {
+  try {
+    const { buffer, contentType } = await getFile(req.params.fileId);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.send(buffer);
+  } catch (err) {
+    if (err.status === 404) return res.status(404).json({ message: 'File not found.' });
+    next(err);
+  }
+}
+
 /** DELETE /api/documents/:id — admin or uploader */
 export async function deleteDocument(req, res, next) {
   try {
@@ -167,6 +199,7 @@ export async function deleteDocument(req, res, next) {
       return res.status(403).json({ message: 'You can only delete your own uploads.' });
     }
     await doc.deleteOne();
+    if (doc.gridFsId) await deleteFile(doc.gridFsId);
     await AuditLog.log({
       actor: req.user._id,
       actorName: req.user.name,
