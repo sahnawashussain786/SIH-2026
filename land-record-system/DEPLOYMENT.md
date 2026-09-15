@@ -21,6 +21,12 @@
   The projects were linked via CLI, so pushes to GitHub do NOT auto-deploy — either
   run the CLI command or connect the projects to the GitHub repo in the Vercel
   dashboard (Settings → Git) to enable auto-deploys.
+- **Upload flow on Vercel is async**: `POST /api/documents/upload` returns **202
+  immediately** (Gemini vision on scans can exceed the 60s function limit) and the
+  pipeline finishes in the background via `waitUntil`; the client polls
+  `GET /api/documents/:id/status` until `status` leaves `processing`. Local dev
+  stays synchronous (201). Max upload is **~4.5 MB** on Vercel (platform request
+  body cap) — the client enforces 4 MB on production builds.
 
 ---
 

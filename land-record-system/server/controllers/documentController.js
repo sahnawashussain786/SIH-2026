@@ -6,7 +6,15 @@ import { runValidation, confidenceRoute, findDuplicates } from '../services/vali
 import { putFile, getFile, deleteFile } from '../services/fileStore.js';
 import { storedFilename } from '../middleware/upload.js';
 
-/** POST /api/documents/upload — upload + immediately run AI pipeline */
+/** POST /api/documents/upload — store the file, then run the AI pipeline.
+ *
+ * On Vercel (serverless) the request must return in seconds — Gemini vision on
+ * a scanned image can take up to a minute, which hits the 60s function limit
+ * (HTTP 504, the browser shows "Cannot reach the API server"). So there the
+ * response is sent immediately (202) and the pipeline finishes in the
+ * background via `waitUntil`; the client polls GET /:id/status for the result.
+ * On a long-running local server the flow stays synchronous (201).
+ */
 export async function uploadDocument(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
@@ -51,30 +59,61 @@ export async function uploadDocument(req, res, next) {
       ip: req.ip,
     });
 
-    // Fire the AI pipeline synchronously with the in-memory buffer
-    // (nothing needs to exist on disk — works on serverless).
-    let result;
-    try {
-      result = await processDocument(doc, req.file.buffer);
-    } catch (err) {
-      doc.status = 'failed';
-      doc.stage = 'ai_failed';
-      await doc.save();
-      await AuditLog.log({
-        actor: req.user._id,
-        actorName: req.user.name,
-        action: 'document.process.failed',
-        entityType: 'Document',
-        entityId: doc._id,
-        details: { error: err.message },
-      });
-      return res.status(502).json({ message: `AI processing failed: ${err.message}`, documentId: doc._id });
+    // Fire the AI pipeline with the in-memory buffer (nothing needs to exist
+    // on disk — works on serverless).
+    if (process.env.VERCEL) {
+      // Serverless: answer now, finish processing in the background.
+      try {
+        const { waitUntil } = await import('@vercel/functions');
+        const buf = req.file.buffer;
+        waitUntil(
+          finalizeDocument(doc, buf, req.user).catch((err) =>
+            console.error('[documents] background processing failed:', err.message)
+          )
+        );
+      } catch (err) {
+        console.error('[documents] could not schedule background processing:', err.message);
+      }
+      return res.status(202).json({ document: doc, route: null, pending: true });
     }
+
+    // Long-running server (local dev): process synchronously as before.
+    await finalizeDocument(doc, req.file.buffer, req.user);
+    const fresh = await Document.findById(doc._id);
+    res.status(201).json({ document: fresh, route: fresh.stage === 'ai_failed' ? 'failed' : fresh.stage });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Run the AI pipeline + validation + auto-accept for a created document.
+ * Self-contained and safe to run in the background: catches its own errors
+ * and marks the document failed. Returns the routing decision.
+ */
+async function finalizeDocument(doc, buffer, user) {
+  let result;
+  try {
+    result = await processDocument(doc, buffer);
+  } catch (err) {
+    doc.status = 'failed';
+    doc.stage = 'ai_failed';
+    await doc.save();
+    await AuditLog.log({
+      actor: user._id,
+      actorName: user.name,
+      action: 'document.process.failed',
+      entityType: 'Document',
+      entityId: doc._id,
+      details: { error: err.message },
+    });
+    return 'failed';
+  }
 
     // Merge AI district/state hints with the ones the officer chose
     const extracted = { ...result.extracted };
-    if (district && !extracted.district) extracted.district = district;
-    if (state && !extracted.state) extracted.state = state;
+    if (doc.district && !extracted.district) extracted.district = doc.district;
+    if (doc.state && !extracted.state) extracted.state = doc.state;
 
     // Validation + duplicates
     const validation = runValidation(extracted);
@@ -90,7 +129,7 @@ export async function uploadDocument(req, res, next) {
     doc.validation = validation;
     doc.ocrText = result.ocrText || '';
     doc.aiMeta = result.aiMeta || {};
-    doc.status = route === 'auto_accept' ? 'processed' : 'processed';
+    doc.status = 'processed';
     doc.stage = route; // auto_accept | manual_review | mandatory_verification
     await doc.save();
 
@@ -109,19 +148,16 @@ export async function uploadDocument(req, res, next) {
     }
 
     await AuditLog.log({
-      actor: req.user._id,
-      actorName: req.user.name,
+      actor: user._id,
+      actorName: user.name,
       action: 'document.processed',
       entityType: 'Document',
       entityId: doc._id,
       details: { engine: result.engine, confidence: overall, route },
-      ip: req.ip,
+      ip: undefined,
     });
 
-    res.status(201).json({ document: doc, route });
-  } catch (err) {
-    next(err);
-  }
+    return route;
 }
 
 /** GET /api/documents — list with filters (status, stage, district, search, pagination) */
@@ -152,6 +188,22 @@ export async function listDocuments(req, res, next) {
     ]);
 
     res.json({ items, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/documents/:id/status — lightweight poll endpoint for background
+ * processing. Returns only the fields the uploader UI needs.
+ */
+export async function getDocumentStatus(req, res, next) {
+  try {
+    const doc = await Document.findById(req.params.id)
+      .select('title originalName status stage overallConfidence recordId mimeType updatedAt aiMeta.engine')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Document not found.' });
+    res.json({ document: doc });
   } catch (err) {
     next(err);
   }

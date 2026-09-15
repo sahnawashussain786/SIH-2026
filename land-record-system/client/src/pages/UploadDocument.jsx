@@ -72,6 +72,11 @@ export default function UploadDocument() {
   const [doneSteps, setDoneSteps] = useState([]);
   const toast = useToast();
 
+  // Serverless platforms cap request bodies (~4.5 MB on Vercel) — enforce a
+  // smaller cap on production builds so users get a clear message instead of a
+  // cryptic network error. Local dev keeps the full 15 MB.
+  const MAX_MB = import.meta.env.PROD ? 4 : 15;
+
   const pickFile = (f) => {
     if (!f) return;
     const ok = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/tiff', 'text/plain'];
@@ -81,8 +86,8 @@ export default function UploadDocument() {
       toast.warning(m, { title: 'Unsupported file type' });
       return;
     }
-    if (f.size > 15 * 1024 * 1024) {
-      const m = 'File too large (max 15 MB).';
+    if (f.size > MAX_MB * 1024 * 1024) {
+      const m = `File too large (max ${MAX_MB} MB${import.meta.env.PROD ? ' on the deployed app — compress or crop the scan' : ''}).`;
       setError(m);
       toast.warning(m, { title: 'File too large' });
       return;
@@ -119,6 +124,49 @@ export default function UploadDocument() {
       if (meta.title) fd.append('title', meta.title);
 
       const res = await api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+      // 202 = accepted; the AI pipeline keeps running server-side. Poll until
+      // it finishes (this is the normal path on the deployed app).
+      if (res.data.pending) {
+        const id = res.data.document._id;
+        const POLL_MS = 3000;
+        const TIMEOUT_MS = 5 * 60 * 1000;
+        const started = Date.now();
+        let finalDoc = null;
+        let failed = false;
+        while (Date.now() - started < TIMEOUT_MS) {
+          await new Promise((r) => setTimeout(r, POLL_MS));
+          const s = await api.get(`/documents/${id}/status`);
+          const st = s.data.document.status;
+          if (st !== 'processing' && st !== 'uploaded') {
+            if (st === 'failed') { failed = true; break; }
+            const full = await api.get(`/documents/${id}`);
+            finalDoc = full.data.document;
+            break;
+          }
+        }
+        clearInterval(timer);
+        if (failed) {
+          const m = 'AI processing failed for this document. It is saved in Documents with status "failed" — try re-uploading a clearer scan.';
+          setError(m);
+          toast.error(m, { title: 'Processing failed', duration: 8000 });
+          return;
+        }
+        if (!finalDoc) {
+          const m = 'Processing is taking longer than expected. The document is saved — check the Documents page in a minute.';
+          setError(m);
+          toast.warning(m, { title: 'Still processing', duration: 8000 });
+          return;
+        }
+        setDoneSteps(PIPELINE_STEPS.map((s) => s.key));
+        setResult({ document: finalDoc, route: finalDoc.stage });
+        toast.success(
+          `"${finalDoc.title || file.name}" processed at ${finalDoc.overallConfidence}% confidence — ${finalDoc.stage === 'auto_accept' ? 'auto-accepted as a land record' : 'sent for review'}.`,
+          { title: 'Extraction complete' }
+        );
+        return;
+      }
+
       clearInterval(timer);
       setDoneSteps(PIPELINE_STEPS.map((s) => s.key));
       setResult(res.data);
@@ -249,7 +297,7 @@ export default function UploadDocument() {
               );
             })}
           </ol>
-          {busy && <p className="mt-4 text-xs text-slate-400">Running OCR + extraction — large scans can take a few seconds…</p>}
+          {busy && <p className="mt-4 text-xs text-slate-400">Running AI extraction — scanned documents can take up to a minute…</p>}
         </div>
       </div>
 

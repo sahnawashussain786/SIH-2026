@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { uploadDocument, listDocuments, getDocument, getFileById, deleteDocument } from '../controllers/documentController.js';
+import { uploadDocument, listDocuments, getDocument, getDocumentStatus, getFileById, deleteDocument } from '../controllers/documentController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
@@ -17,6 +17,7 @@ router.post(
   uploadDocument
 );
 router.get('/', listDocuments);
+router.get('/:id/status', getDocumentStatus);
 router.get('/:id', getDocument);
 router.delete('/:id', deleteDocument);
 
