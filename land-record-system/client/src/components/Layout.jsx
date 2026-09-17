@@ -1,29 +1,60 @@
-import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
 import {
-  IconDashboard, IconUpload, IconDocument, IconVerification, IconRecords,
-  IconAdmin, IconLogout, IconMenu, IconClose, IconLandmark, IconShieldSolid,
+  IconDashboard,
+  IconUpload,
+  IconDocument,
+  IconVerification,
+  IconRecords,
+  IconAdmin,
+  IconLogout,
+  IconMenu,
+  IconClose,
+  IconLandmark,
+  IconShieldSolid,
   IconUser,
-} from './icons.js';
+} from "./icons.js";
 
 const ROLE_LABELS = {
-  data_entry_officer: 'Data Entry Officer',
-  digitization_operator: 'Digitization Operator',
-  revenue_officer: 'Revenue Officer',
-  senior_officer: 'Senior Officer',
-  admin: 'Administrator',
-  citizen: 'Citizen',
+  data_entry_officer: "Data Entry Officer",
+  digitization_operator: "Digitization Operator",
+  revenue_officer: "Revenue Officer",
+  senior_officer: "Senior Officer",
+  admin: "Administrator",
+  citizen: "Citizen",
 };
 
 const NAV = [
-  { to: '/dashboard', label: 'Dashboard', Icon: IconDashboard, roles: 'all' },
-  { to: '/upload', label: 'Upload Document', Icon: IconUpload, roles: ['data_entry_officer', 'digitization_operator', 'revenue_officer', 'senior_officer', 'admin'] },
-  { to: '/documents', label: 'Documents', Icon: IconDocument, roles: 'all' },
-  { to: '/verification', label: 'Verification', Icon: IconVerification, roles: ['data_entry_officer', 'digitization_operator', 'revenue_officer', 'senior_officer', 'admin'] },
-  { to: '/records', label: 'Land Records', Icon: IconRecords, roles: 'all' },
-  { to: '/profile', label: 'My Profile', Icon: IconUser, roles: 'all' },
-  { to: '/admin', label: 'Admin', Icon: IconAdmin, roles: ['admin'] },
+  { to: "/dashboard", label: "Dashboard", Icon: IconDashboard, roles: "all" },
+  {
+    to: "/upload",
+    label: "Upload Document",
+    Icon: IconUpload,
+    roles: [
+      "data_entry_officer",
+      "digitization_operator",
+      "revenue_officer",
+      "senior_officer",
+      "admin",
+    ],
+  },
+  { to: "/documents", label: "Documents", Icon: IconDocument, roles: "all" },
+  {
+    to: "/verification",
+    label: "Verification",
+    Icon: IconVerification,
+    roles: [
+      "data_entry_officer",
+      "digitization_operator",
+      "revenue_officer",
+      "senior_officer",
+      "admin",
+    ],
+  },
+  { to: "/records", label: "Land Records", Icon: IconRecords, roles: "all" },
+  { to: "/profile", label: "My Profile", Icon: IconUser, roles: "all" },
+  { to: "/admin", label: "Admin", Icon: IconAdmin, roles: ["admin"] },
 ];
 
 export default function Layout() {
@@ -31,11 +62,13 @@ export default function Layout() {
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
 
-  const items = NAV.filter((n) => n.roles === 'all' || n.roles.includes(user?.role));
+  const items = NAV.filter(
+    (n) => n.roles === "all" || n.roles.includes(user?.role),
+  );
 
   const signOut = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -50,7 +83,9 @@ export default function Layout() {
             <h1 className="text-base font-bold leading-tight tracking-tight text-white">
               BHOOMI<span className="text-brand-400">-AI</span>
             </h1>
-            <p className="text-[11px] tracking-wide text-slate-400">Land Record Intelligence</p>
+            <p className="text-[11px] tracking-wide text-slate-400">
+              Land Record Intelligence
+            </p>
           </div>
         </div>
 
@@ -62,8 +97,8 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   isActive
-                    ? 'bg-brand-600/90 text-white shadow-sm'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    ? "bg-brand-600/90 text-white shadow-sm"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`
               }
             >
@@ -76,11 +111,15 @@ export default function Layout() {
         <div className="border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-bold uppercase text-slate-200">
-              {user?.name?.charAt(0) || 'U'}
+              {user?.name?.charAt(0) || "U"}
             </span>
             <Link to="/profile" className="min-w-0" title="Open my profile">
-              <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
-              <p className="truncate text-[11px] text-slate-400">{ROLE_LABELS[user?.role] || user?.role}</p>
+              <p className="truncate text-sm font-semibold text-white">
+                {user?.name}
+              </p>
+              <p className="truncate text-[11px] text-slate-400">
+                {ROLE_LABELS[user?.role] || user?.role}
+              </p>
             </Link>
           </div>
           <button
@@ -95,7 +134,10 @@ export default function Layout() {
       {/* ── Mobile drawer ─────────────────────────────────── */}
       {navOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setNavOpen(false)} />
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setNavOpen(false)}
+          />
           <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-slate-900 text-slate-300">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -106,7 +148,10 @@ export default function Layout() {
                   BHOOMI<span className="text-brand-400">-AI</span>
                 </span>
               </div>
-              <button onClick={() => setNavOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white">
+              <button
+                onClick={() => setNavOpen(false)}
+                className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+              >
                 <IconClose />
               </button>
             </div>
@@ -118,7 +163,9 @@ export default function Layout() {
                   onClick={() => setNavOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                      isActive ? 'bg-brand-600/90 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      isActive
+                        ? "bg-brand-600/90 text-white"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
                     }`
                   }
                 >
@@ -128,7 +175,10 @@ export default function Layout() {
               ))}
             </nav>
             <div className="border-t border-white/10 p-4">
-              <button onClick={signOut} className="flex w-full items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10">
+              <button
+                onClick={signOut}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10"
+              >
                 <IconLogout /> Sign out
               </button>
             </div>
@@ -140,14 +190,20 @@ export default function Layout() {
         {/* ── Top bar (mobile) ────────────────────────────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm md:hidden">
           <div className="flex items-center gap-2">
-            <button onClick={() => setNavOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100">
+            <button
+              onClick={() => setNavOpen(true)}
+              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+            >
               <IconMenu />
             </button>
             <span className="flex items-center gap-2 font-bold text-slate-900">
               <IconLandmark className="text-brand-600" /> BHOOMI-AI
             </span>
           </div>
-          <button onClick={signOut} className="flex items-center gap-1.5 text-sm font-medium text-brand-700">
+          <button
+            onClick={signOut}
+            className="flex items-center gap-1.5 text-sm font-medium text-brand-700"
+          >
             <IconLogout className="text-sm" /> Sign out
           </button>
         </header>
@@ -164,11 +220,13 @@ export default function Layout() {
             title="Open my profile"
           >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
-              {user?.name?.charAt(0) || 'U'}
+              {user?.name?.charAt(0) || "U"}
             </span>
             <span className="font-semibold text-slate-700">{user?.name}</span>
             <span className="text-slate-300">·</span>
-            <span className="text-slate-500">{ROLE_LABELS[user?.role] || user?.role}</span>
+            <span className="text-slate-500">
+              {ROLE_LABELS[user?.role] || user?.role}
+            </span>
           </Link>
         </header>
 

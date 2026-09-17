@@ -75,7 +75,21 @@ Rules:
 - Also return "documentLanguage" (ISO 639 code, or comma-separated if mixed) and
   "documentScript" (e.g. Devanagari, Bengali, Tamil, Latin).
 - If the document is unreadable, return an empty "confidence" object and put the
-  reason in "notes".`;
+  reason in "notes".
+
+FAKE / AI-GENERATED DOCUMENT CHECK (images and PDF pages only):
+Inspect the page as a whole and decide whether it shows a GENUINE scan or photo
+of a physical paper document, or a digitally GENERATED / AI-created image of one.
+Look for: melted or garbled pseudo-text and fake letters, text that repeats or
+doesn't align with ruled lines, impossible uniform paper texture, missing print
+noise / fold marks / staples / scan shadows, unrealistic stamps and signatures,
+hallucinated layouts, or a painted rather than printed look.
+- "aiGeneratedImage": "authentic_scan" (genuine scan/photo), "likely_ai_generated"
+  (AI-generated or heavily AI-fabricated), "unclear" (cannot decide), or
+  "not_an_image" (plain text / vector, nothing to inspect).
+- "aiGeneratedConfidence": 0-100 certainty of that classification.
+- "aiGeneratedReasons": 1-4 short concrete visual observations supporting it.
+Base this ONLY on what is visible; do not guess from the extracted content.`;
 
 let client = null;
 let initError = null;
@@ -191,7 +205,23 @@ function splitParsed(parsed) {
       .toLowerCase(),
     script: String(parsed?.documentScript ?? "").trim(),
   };
-  return { fields, confMap, notes, langInfo };
+  const assessment = String(parsed?.aiGeneratedImage ?? "").trim();
+  const authenticity = assessment
+    ? {
+        assessment,
+        confidence: Math.max(
+          0,
+          Math.min(100, Number(parsed?.aiGeneratedConfidence ?? 0) || 0),
+        ),
+        reasons: Array.isArray(parsed?.aiGeneratedReasons)
+          ? parsed.aiGeneratedReasons
+              .map((r) => String(r))
+              .filter(Boolean)
+              .slice(0, 5)
+          : [],
+      }
+    : null;
+  return { fields, confMap, notes, langInfo, authenticity };
 }
 
 function scoreFields(fields, confMap) {
@@ -242,7 +272,9 @@ export async function geminiExtractImage(
       },
       { text: PROMPT },
     ]);
-    const { fields, confMap, notes, langInfo } = splitParsed(parseJson(raw));
+    const { fields, confMap, notes, langInfo, authenticity } = splitParsed(
+      parseJson(raw),
+    );
     const warnings = [];
     if (langInfo.language)
       warnings.push(`documentLanguage=${langInfo.language}`);
@@ -256,6 +288,7 @@ export async function geminiExtractImage(
       overallConfidence: overall,
       warnings,
       langInfo,
+      authenticity,
       processingMs: Date.now() - started,
     };
   } catch (err) {
@@ -280,7 +313,9 @@ export async function geminiExtractText(text) {
     const raw = await callGemini([
       { text: `${PROMPT}\n\nDOCUMENT TEXT:\n${String(text).slice(0, 24000)}` },
     ]);
-    const { fields, confMap, notes, langInfo } = splitParsed(parseJson(raw));
+    const { fields, confMap, notes, langInfo, authenticity } = splitParsed(
+      parseJson(raw),
+    );
     const warnings = [];
     if (notes) warnings.push(`Gemini notes: ${notes}`);
     const { fieldConfidences, overall } = scoreFields(fields, confMap);
@@ -290,6 +325,7 @@ export async function geminiExtractText(text) {
       overallConfidence: overall,
       warnings,
       langInfo,
+      authenticity,
       processingMs: Date.now() - started,
     };
   } catch (err) {
