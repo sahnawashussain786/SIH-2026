@@ -62,9 +62,7 @@ export default function LandRecords() {
       <div>
         <h1 className="page-title">Digital Land Records</h1>
         <p className="page-subtitle">Approved, verified records — click any record for its full details.</p>
-      </div>
-
-      <div className="panel flex flex-wrap items-center gap-3 p-4">
+      </div>      <div className="panel flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -74,46 +72,48 @@ export default function LandRecords() {
               setFilters({ ...filters, q: e.target.value });
             }}
             placeholder="Search owner, village, district, khatian, plot…"
-            className="form-input w-72 pl-10"
+            className="form-input sm:w-72"
           />
         </div>
-        <input
-          value={filters.district}
-          onChange={(e) => {
-            setPage(1);
-            setFilters({ ...filters, district: e.target.value });
-          }}
-          placeholder="District"
-          className="form-input w-40"
-        />
-        <input
-          value={filters.village}
-          onChange={(e) => {
-            setPage(1);
-            setFilters({ ...filters, village: e.target.value });
-          }}
-          placeholder="Village"
-          className="form-input w-40"
-        />
-        <select
-          value={filters.landType}
-          onChange={(e) => {
-            setPage(1);
-            setFilters({ ...filters, landType: e.target.value });
-          }}
-          className="form-input w-44"
-        >
-          <option value="">All land types</option>
-          {['Agricultural', 'Residential', 'Commercial', 'Wasteland'].map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-3">
+          <input
+            value={filters.district}
+            onChange={(e) => {
+              setPage(1);
+              setFilters({ ...filters, district: e.target.value });
+            }}
+            placeholder="District"
+            className="form-input"
+          />
+          <input
+            value={filters.village}
+            onChange={(e) => {
+              setPage(1);
+              setFilters({ ...filters, village: e.target.value });
+            }}
+            placeholder="Village"
+            className="form-input"
+          />
+          <select
+            value={filters.landType}
+            onChange={(e) => {
+              setPage(1);
+              setFilters({ ...filters, landType: e.target.value });
+            }}
+            className="form-input col-span-2 sm:w-44"
+          >
+            <option value="">All land types</option>
+            {['Agricultural', 'Residential', 'Commercial', 'Wasteland'].map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
         <span className="text-sm text-slate-400">{data.total} records</span>
       </div>
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.items.map((r) => (
           <button
             key={r._id}
@@ -195,14 +195,14 @@ function Row({ label, value }) {
 function RecordDetailModal({ record, loading, error, onClose }) {
   const src = record?.sourceDocument;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      <div
+      className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Land record details"
     >
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="toast-slide relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+      <div className="anim-scale-in relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
         {/* header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/70 px-6 py-4">
           <div className="min-w-0">

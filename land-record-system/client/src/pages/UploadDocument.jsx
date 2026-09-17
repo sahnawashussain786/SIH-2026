@@ -439,11 +439,13 @@ export default function UploadDocument() {
                   return (
                     <div
                       key={key}
-                      className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                      className="flex items-start justify-between gap-2 px-3 py-2 text-sm"
                     >
-                      <dt className="text-slate-500">{label}</dt>
-                      <dd className="flex items-center gap-2 text-right font-medium text-slate-800">
-                        {value || <span className="text-slate-300">—</span>}
+                      <dt className="shrink-0 text-slate-500">{label}</dt>
+                      <dd className="flex min-w-0 items-center justify-end gap-2 break-words text-right font-medium text-slate-800">
+                        <span className="min-w-0 break-words">
+                          {value || <span className="text-slate-300">—</span>}
+                        </span>
                         {fc && <ConfidenceBadge value={fc.confidence} />}
                       </dd>
                     </div>

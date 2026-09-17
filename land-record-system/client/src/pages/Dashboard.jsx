@@ -66,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-4 xl:grid-cols-4">
         {kpis.map(({ label, value, Icon, chip }) => (
           <div key={label} className="panel p-5">
             <div className="flex items-start justify-between">

@@ -97,21 +97,21 @@ export default function DocumentDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <Link
             to="/documents"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
           >
             <IconArrowLeft className="text-sm" /> Back to documents
           </Link>
-          <h1 className="page-title mt-1">{doc.title}</h1>
-          <p className="page-subtitle">
+          <h1 className="page-title mt-1 break-words">{doc.title}</h1>
+          <p className="page-subtitle break-words">
             {doc.originalName} · {(doc.size / 1024).toFixed(0)} KB · uploaded by{" "}
             {doc.uploadedBy?.name}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <StatusBadge value={doc.status} />
           <StatusBadge value={doc.stage} />
           <ConfidenceBadge value={doc.overallConfidence} />

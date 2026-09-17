@@ -63,6 +63,97 @@ body {
   animation: toast-slide-in 0.28s cubic-bezier(0.21, 1.02, 0.73, 1);
 }
 
+/* ── Motion system ──────────────────────────────────────────────
+   Small, tasteful entrance animations shared across the app.     */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Whole-page entrance on navigation (wrapped around <Outlet/>) —
+   no fill-mode: a lingering transform would turn <main> into the
+   containing block for position:fixed modals and break them. */
+.page-enter {
+  animation: fade-up 0.32s cubic-bezier(0.22, 0.8, 0.32, 1);
+}
+
+/* Staggered children — add .stagger to a grid/list container */
+.stagger > * {
+  animation: fade-up 0.42s cubic-bezier(0.22, 0.8, 0.32, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.stagger > *:nth-child(6) { animation-delay: 0.28s; }
+.stagger > *:nth-child(7) { animation-delay: 0.33s; }
+.stagger > *:nth-child(8) { animation-delay: 0.38s; }
+.stagger > *:nth-child(n + 9) { animation-delay: 0.42s; }
+
+/* Modals / popovers */
+.anim-scale-in {
+  animation: scale-in 0.24s cubic-bezier(0.22, 0.8, 0.32, 1) both;
+}
+.anim-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+/* Mobile nav drawer */
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.anim-drawer-in {
+  animation: drawer-in 0.26s cubic-bezier(0.22, 0.8, 0.32, 1) both;
+}
+
+/* Accessibility: honour reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* iOS Safari zooms into inputs with font-size < 16px — bump on touch */
+@media (max-width: 640px) {
+  .form-input,
+  select.form-input {
+    font-size: 16px;
+  }
+}
+
 /* Refined scrollbars (WebKit) */
 ::-webkit-scrollbar {
   width: 8px;

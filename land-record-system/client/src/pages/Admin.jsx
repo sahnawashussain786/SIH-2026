@@ -106,7 +106,7 @@ export default function Admin() {
 
       {tab === 'users' && (
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="panel overflow-hidden lg:col-span-2">
+          <div className="panel overflow-x-auto lg:col-span-2">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>
@@ -192,7 +192,7 @@ export default function Admin() {
       )}
 
       {tab === 'audit' && (
-        <div className="panel overflow-hidden">
+        <div className="panel overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
               <tr>

@@ -49,7 +49,7 @@ export default function Verification() {
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.items.map((d) => (
           <Link
             key={d._id}

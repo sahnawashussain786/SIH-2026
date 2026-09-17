@@ -1,4 +1,4 @@
-import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
@@ -60,6 +60,7 @@ const NAV = [
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
 
   const items = NAV.filter(
@@ -138,7 +139,7 @@ export default function Layout() {
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={() => setNavOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-slate-900 text-slate-300">
+          <aside className="anim-drawer-in absolute left-0 top-0 flex h-full w-72 flex-col bg-slate-900 text-slate-300">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-white">
@@ -230,7 +231,10 @@ export default function Layout() {
           </Link>
         </header>
 
-        <main className="flex-1 p-4 md:p-8">
+        <main
+ key={location.pathname}
+ className="page-enter flex-1 p-4 md:p-8"
+        >
           <Outlet />
         </main>
       </div>

@@ -38,14 +38,14 @@ export default function Documents() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <select
           value={filters.status}
           onChange={(e) => {
             setPage(1);
             setFilters({ ...filters, status: e.target.value });
           }}
-          className="form-input w-44"
+          className="form-input sm:w-44"
         >
           <option value="">All statuses</option>
           <option value="processing">Processing</option>
@@ -54,7 +54,7 @@ export default function Documents() {
           <option value="rejected">Rejected</option>
           <option value="failed">Failed</option>
         </select>
-        <div className="relative">
+        <div className="relative flex-1 sm:max-w-xs">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={filters.search}
@@ -63,7 +63,7 @@ export default function Documents() {
               setFilters({ ...filters, search: e.target.value });
             }}
             placeholder="Search title, owner, village…"
-            className="form-input w-64 pl-10"
+            className="form-input pl-10"
           />
         </div>
         <span className="text-sm text-slate-400">{data.total} documents</span>
@@ -75,7 +75,8 @@ export default function Documents() {
         </div>
       )}
 
-      <div className="panel overflow-hidden">
+      {/* Desktop table */}
+      <div className="panel hidden overflow-hidden md:block">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
             <tr>
@@ -145,6 +146,53 @@ export default function Documents() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="stagger space-y-3 md:hidden">
+        {data.items.map((d) => (
+          <Link
+            key={d._id}
+            to={`/documents/${d._id}`}
+            className="panel block p-4 transition active:scale-[0.99]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium text-slate-800">{d.title}</p>
+                <p className="truncate text-xs text-slate-400">
+                  {d.originalName} · {(d.size / 1024).toFixed(0)} KB ·{" "}
+                  {new Date(d.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <IconArrowRight className="mt-1 shrink-0 text-slate-300" />
+            </div>
+            {(d.extracted?.ownerName || d.extracted?.village) && (
+              <p className="mt-2 truncate text-sm text-slate-600">
+                {d.extracted?.ownerName || "—"}
+                {(d.extracted?.village || d.extracted?.district) && (
+                  <span className="text-slate-400">
+                    {"  ·  "}
+                    {[d.extracted?.village, d.extracted?.district || d.district]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                )}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <StatusBadge value={d.status} />
+              <AuthenticityBadge authenticity={d.authenticity} />
+              {d.overallConfidence ? (
+                <ConfidenceBadge value={d.overallConfidence} />
+              ) : null}
+            </div>
+          </Link>
+        ))}
+        {data.items.length === 0 && (
+          <div className="panel px-4 py-10 text-center text-slate-400">
+            No documents found.
+          </div>
+        )}
       </div>
 
       {data.pages > 1 && (
