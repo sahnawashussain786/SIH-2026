@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
+import { PageLoader } from '../components/Spinner.jsx';
 import { IconChevronLeft, IconChevronRight, IconCheckSolid } from '../components/icons.js';
 
 export default function Verification() {
@@ -10,14 +11,17 @@ export default function Verification() {
   const [page, setPage] = useState(1);
   const [priority, setPriority] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const load = () => {
     const params = new URLSearchParams({ page, limit: 12 });
     if (priority) params.set('priority', 'high');
+    setLoading(true);
     api
       .get(`/verification/queue?${params}`)
       .then((res) => setData(res.data))
-      .catch((err) => setError(errMsg(err)));
+      .catch((err) => setError(errMsg(err)))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [page, priority]);
@@ -49,7 +53,11 @@ export default function Verification() {
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
-      <div className="stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {loading && data.items.length === 0 && (
+        <PageLoader label="Loading verification queue…" />
+      )}
+
+      <div className={`stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3 ${loading && data.items.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
         {data.items.map((d) => (
           <Link
             key={d._id}

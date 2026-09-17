@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
+import Spinner from '../components/Spinner.jsx';
 import {
   IconSearch, IconChevronLeft, IconChevronRight, IconRecords, IconCheckSolid,
   IconOfficer, IconStamp, IconClose, IconPin, IconUser, IconLayers,
@@ -230,7 +231,10 @@ function RecordDetailModal({ record, loading, error, onClose }) {
             <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
           )}
           {loading && !error && (
-            <p className="py-6 text-center text-sm text-slate-400">Loading full record…</p>
+            <div className="flex flex-col items-center justify-center gap-3 py-10 text-slate-400">
+              <Spinner size="lg" />
+              <p className="text-sm animate-pulse">Loading full record…</p>
+            </div>
           )}
           {!loading && !error && (
             <>

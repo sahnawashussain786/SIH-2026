@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, errMsg } from '../services/api.js';
 import { useToast } from '../context/ToastContext.jsx';
+import { PageLoader } from '../components/Spinner.jsx';
 import {
   IconUsers, IconAudit, IconChevronLeft, IconChevronRight, IconPlus,
 } from '../components/icons.js';
@@ -29,10 +30,14 @@ export default function Admin() {
   const loadUsers = () => api.get('/admin/users').then((r) => setUsers(r.data.items)).catch((e) => setError(errMsg(e)));
   const loadLogs = () => api.get(`/admin/audit-logs?page=${logPage}&limit=15`).then((r) => setLogs(r.data)).catch((e) => setError(errMsg(e)));
 
+  const [tabLoading, setTabLoading] = useState(true);
+
   useEffect(() => {
     setError('');
-    if (tab === 'users') loadUsers();
-    else loadLogs();
+    setTabLoading(true);
+    const done = () => setTabLoading(false);
+    if (tab === 'users') loadUsers().finally(done);
+    else loadLogs().finally(done);
   }, [tab, logPage]);
 
   const createUser = async (e) => {
@@ -104,7 +109,9 @@ export default function Admin() {
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
       {success && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-100">{success}</div>}
 
-      {tab === 'users' && (
+      {tabLoading && <PageLoader label={tab === 'users' ? 'Loading users…' : 'Loading audit log…'} />}
+
+      {!tabLoading && tab === 'users' && (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="panel overflow-x-auto lg:col-span-2">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -191,7 +198,7 @@ export default function Admin() {
         </div>
       )}
 
-      {tab === 'audit' && (
+      {!tabLoading && tab === 'audit' && (
         <div className="panel overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">

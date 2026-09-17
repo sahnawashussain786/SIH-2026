@@ -70,6 +70,7 @@ export {
   FiCalendar as IconCalendar,
   FiMapPin as IconPin,
   FiLayers as IconLayers,
+  FiLoader as IconLoader,
 } from 'react-icons/fi';
 
 export {

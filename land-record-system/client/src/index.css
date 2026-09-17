@@ -135,6 +135,30 @@ body {
   animation: drawer-in 0.26s cubic-bezier(0.22, 0.8, 0.32, 1) both;
 }
 
+/* ── Loading spinner ────────────────────────────────────────────
+   Fast quarter-turn then a slower glide — reads as “working”,
+   not as decoration. */
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(90deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spinner-rotate 0.9s linear infinite;
+}
+
+/* Spinner that swaps in when a button is busy */
+.btn .spinner {
+  margin-right: 0.25rem;
+}
+
 /* Accessibility: honour reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,

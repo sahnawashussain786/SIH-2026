@@ -4,6 +4,7 @@ import { api, errMsg } from "../services/api.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import ConfidenceBadge from "../components/ConfidenceBadge.jsx";
 import AuthenticityBadge from "../components/AuthenticityBadge.jsx";
+import Spinner, { PageLoader } from "../components/Spinner.jsx";
 import {
   IconSearch,
   IconChevronLeft,
@@ -16,15 +17,18 @@ export default function Documents() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ status: "", search: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = () => {
+    setLoading(true);
     const params = new URLSearchParams({ page, limit: 12 });
     if (filters.status) params.set("status", filters.status);
     if (filters.search) params.set("search", filters.search);
     api
       .get(`/documents?${params}`)
       .then((res) => setData(res.data))
-      .catch((err) => setError(errMsg(err)));
+      .catch((err) => setError(errMsg(err)))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [page, filters]);
@@ -75,8 +79,16 @@ export default function Documents() {
         </div>
       )}
 
+      {loading && data.items.length === 0 && (
+        <PageLoader label="Loading documents…" />
+      )}
+
       {/* Desktop table */}
-      <div className="panel hidden overflow-hidden md:block">
+      <div
+        className={`panel hidden overflow-hidden transition-opacity duration-200 md:block ${
+          loading ? "opacity-50" : "opacity-100"
+        }`}
+      >
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
             <tr>
@@ -149,7 +161,11 @@ export default function Documents() {
       </div>
 
       {/* Mobile cards */}
-      <div className="stagger space-y-3 md:hidden">
+      <div
+        className={`stagger space-y-3 transition-opacity duration-200 md:hidden ${
+          loading && data.items.length > 0 ? "opacity-50" : "opacity-100"
+        }`}
+      >
         {data.items.map((d) => (
           <Link
             key={d._id}
@@ -188,7 +204,7 @@ export default function Documents() {
             </div>
           </Link>
         ))}
-        {data.items.length === 0 && (
+        {data.items.length === 0 && !loading && (
           <div className="panel px-4 py-10 text-center text-slate-400">
             No documents found.
           </div>

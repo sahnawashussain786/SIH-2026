@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext.jsx";
 import ConfidenceBadge from "../components/ConfidenceBadge.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import AuthenticityBadge from "../components/AuthenticityBadge.jsx";
+import Spinner from "../components/Spinner.jsx";
 import {
   IconUploadSimple,
   IconFile,
@@ -354,7 +355,9 @@ export default function UploadDocument() {
             className="btn-primary w-full py-3"
           >
             {busy ? (
-              "Processing document…"
+              <span className="inline-flex items-center gap-2">
+                <Spinner light size="xs" /> Processing document…
+              </span>
             ) : (
               <>
                 <IconAI /> Process Document
@@ -394,8 +397,9 @@ export default function UploadDocument() {
             })}
           </ol>
           {busy && (
-            <p className="mt-4 text-xs text-slate-400">
-              Running AI extraction — scanned documents can take up to a minute…
+            <p className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+              <Spinner size="xs" /> Running AI extraction — scanned documents can
+              take up to a minute…
             </p>
           )}
         </div>

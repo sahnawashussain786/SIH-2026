@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { errMsg } from "../services/api.js";
+import Spinner from "../components/Spinner.jsx";
 import {
   IconLandmark,
   IconLock,
@@ -216,7 +217,9 @@ export default function Login() {
                 className="btn-primary w-full"
               >
                 {busy ? (
-                  "Signing in…"
+                  <span className="inline-flex items-center gap-2">
+                    <Spinner light size="xs" /> Signing in…
+                  </span>
                 ) : (
                   <>
                     Sign in <IconArrowRight />

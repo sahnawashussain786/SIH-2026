@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { api, errMsg } from '../services/api.js';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
+import { PageLoader } from '../components/Spinner.jsx';
 import {
   IconFiles, IconApproved, IconPending, IconIssues, IconUpload, IconTrend, IconCheckSolid,
 } from '../components/icons.js';
@@ -33,7 +34,7 @@ export default function Dashboard() {
   }, []);
 
   if (error) return <div className="rounded-lg bg-rose-50 p-4 text-rose-700 ring-1 ring-rose-200">{error}</div>;
-  if (!stats) return <div className="text-slate-500">Loading dashboard…</div>;
+  if (!stats) return <PageLoader label="Loading dashboard…" />;
 
   const t = stats.totals;
   const kpis = [

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
+import { PageLoader } from './components/Spinner.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import UploadDocument from './pages/UploadDocument.jsx';
@@ -23,7 +24,7 @@ const ROLE_LABELS = {
 function Protected({ roles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="p-8 text-slate-500">Loading…</div>;
+  if (loading) return <PageLoader label="Checking your session…" />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   if (roles && !roles.includes(user.role)) {
     return (

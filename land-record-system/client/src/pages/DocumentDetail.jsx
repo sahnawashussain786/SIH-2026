@@ -6,6 +6,7 @@ import StatusBadge from "../components/StatusBadge.jsx";
 import ConfidenceBadge from "../components/ConfidenceBadge.jsx";
 import AuthenticityBadge from "../components/AuthenticityBadge.jsx";
 import DocumentViewer from "../components/DocumentViewer.jsx";
+import { PageLoader, Spinner } from "../components/Spinner.jsx";
 import {
   IconArrowLeft,
   IconSave,
@@ -59,12 +60,12 @@ export default function DocumentDetail() {
     return (
       <div className="rounded-lg bg-rose-50 p-4 text-rose-700">{error}</div>
     );
-  if (!doc) return <div className="text-slate-500">Loading…</div>;
+  if (!doc) return <PageLoader label="Loading document…" />;
 
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const act = async (action) => {
-    setBusy(true);
+    setBusy(action);
     setError("");
     setSuccess("");
     try {
@@ -206,21 +207,36 @@ export default function DocumentDetail() {
               onClick={() => act("save")}
               className="btn-secondary"
             >
-              <IconSave /> Save edits
+              {busy === "save" ? (
+                <Spinner light size="xs" />
+              ) : (
+                <IconSave />
+              )}
+              {busy === "save" ? "Saving…" : "Save edits"}
             </button>
             <button
               disabled={busy}
               onClick={() => act("approve")}
               className="btn-success"
             >
-              <IconCheck /> Approve
+              {busy === "approve" ? (
+                <Spinner light size="xs" />
+              ) : (
+                <IconCheck />
+              )}
+              {busy === "approve" ? "Approving…" : "Approve"}
             </button>
             <button
               disabled={busy}
               onClick={() => act("reject")}
               className="btn-danger"
             >
-              <IconX /> Reject
+              {busy === "reject" ? (
+                <Spinner light size="xs" />
+              ) : (
+                <IconX />
+              )}
+              {busy === "reject" ? "Rejecting…" : "Reject"}
             </button>
           </div>
 
