@@ -20,6 +20,14 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Belt-and-braces: even if the idle timer misses it, a 401 from any API call
+  // (e.g. an expired token) drops the local session immediately.
+  useEffect(() => {
+    const onForced = () => setUser(null);
+    window.addEventListener('lrs:force-logout', onForced);
+    return () => window.removeEventListener('lrs:force-logout', onForced);
+  }, []);
+
   const login = useCallback(async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('lrs_token', res.data.token);

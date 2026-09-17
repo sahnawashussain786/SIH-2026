@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
+import useIdleLogout from './hooks/useIdleLogout.js';
 import Layout from './components/Layout.jsx';
 import { PageLoader } from './components/Spinner.jsx';
 import Login from './pages/Login.jsx';
@@ -24,6 +25,15 @@ const ROLE_LABELS = {
 function Protected({ roles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Auto sign-out after 6h of inactivity (or when the JWT expires).
+  useIdleLogout(() => {
+    if (window.location.pathname !== '/login') {
+      navigate('/login', { state: { sessionExpired: true }, replace: true });
+    }
+  });
+
   if (loading) return <PageLoader label="Checking your session…" />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   if (roles && !roles.includes(user.role)) {

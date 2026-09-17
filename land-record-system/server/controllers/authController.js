@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
-import { signToken } from '../middleware/auth.js';
+import { signToken, decodeToken } from '../middleware/auth.js';
 
 /** POST /api/auth/register — admin-only user creation (public bootstrap handled by seed) */
 export async function register(req, res, next) {
@@ -57,7 +57,10 @@ export async function login(req, res, next) {
 
 /** GET /api/auth/me */
 export async function me(req, res) {
-  res.json({ user: req.user.toSafeJSON() });
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  const exp = token ? decodeToken(token)?.exp || null : null; // unix seconds
+  res.json({ user: req.user.toSafeJSON(), session: { expiresAt: exp ? exp * 1000 : null } });
 }
 
 /** PUT /api/auth/me — update own profile (name, department, district, state) */

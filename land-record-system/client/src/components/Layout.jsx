@@ -14,6 +14,8 @@ import {
   IconLandmark,
   IconShieldSolid,
   IconUser,
+  IconChevronLeft,
+  IconChevronRight,
 } from "./icons.js";
 
 const ROLE_LABELS = {
@@ -57,11 +59,30 @@ const NAV = [
   { to: "/admin", label: "Admin", Icon: IconAdmin, roles: ["admin"] },
 ];
 
+const SIDEBAR_KEY = "lrs_sidebar_collapsed";
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(SIDEBAR_KEY, c ? "0" : "1");
+      } catch {
+        /* private mode — state just won't persist */
+      }
+      return !c;
+    });
 
   const items = NAV.filter(
     (n) => n.roles === "all" || n.roles.includes(user?.role),
@@ -75,28 +96,57 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen bg-slate-100">
       {/* ── Sidebar (desktop) ─────────────────────────────── */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-slate-900 text-slate-300 shadow-sidebar md:flex">
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white shadow-md">
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-slate-900 text-slate-300 shadow-sidebar transition-[width] duration-200 ease-in-out md:flex ${
+          collapsed ? "w-[76px]" : "w-64"
+        }`}
+      >
+        <div
+          className={`flex items-center gap-3 border-b border-white/10 py-5 ${
+            collapsed ? "flex-col px-2" : "px-5"
+          }`}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-md">
             <IconLandmark className="text-lg" />
           </span>
-          <div>
-            <h1 className="text-base font-bold leading-tight tracking-tight text-white">
-              BHOOMI<span className="text-brand-400">-AI</span>
-            </h1>
-            <p className="text-[11px] tracking-wide text-slate-400">
-              Land Record Intelligence
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <h1 className="text-base font-bold leading-tight tracking-tight text-white">
+                BHOOMI<span className="text-brand-400">-AI</span>
+              </h1>
+              <p className="text-[11px] tracking-wide text-slate-400">
+                Land Record Intelligence
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className={`rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white ${
+              collapsed ? "" : "ml-auto"
+            }`}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <IconChevronRight /> : <IconChevronLeft />}
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav
+          className={`flex-1 space-y-1 overflow-y-auto ${
+            collapsed ? "p-2" : "p-3"
+          }`}
+        >
           {items.map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                `flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition ${
+                  collapsed ? "justify-center" : "px-3"
+                } ${
                   isActive
                     ? "bg-brand-600/90 text-white shadow-sm"
                     : "text-slate-400 hover:bg-white/5 hover:text-white"
@@ -104,31 +154,51 @@ export default function Layout() {
               }
             >
               <Icon className="text-base opacity-90" />
-              {label}
+              {!collapsed && label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-bold uppercase text-slate-200">
+        <div
+          className={`border-t border-white/10 p-4 ${
+            collapsed ? "flex flex-col items-center gap-3 px-2" : ""
+          }`}
+        >
+          <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-bold uppercase text-slate-200"
+              title={collapsed ? user?.name : undefined}
+            >
               {user?.name?.charAt(0) || "U"}
             </span>
-            <Link to="/profile" className="min-w-0" title="Open my profile">
-              <p className="truncate text-sm font-semibold text-white">
-                {user?.name}
-              </p>
-              <p className="truncate text-[11px] text-slate-400">
-                {ROLE_LABELS[user?.role] || user?.role}
-              </p>
-            </Link>
+            {!collapsed && (
+              <Link to="/profile" className="min-w-0" title="Open my profile">
+                <p className="truncate text-sm font-semibold text-white">
+                  {user?.name}
+                </p>
+                <p className="truncate text-[11px] text-slate-400">
+                  {ROLE_LABELS[user?.role] || user?.role}
+                </p>
+              </Link>
+            )}
           </div>
-          <button
-            onClick={signOut}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
-          >
-            <IconLogout /> Sign out
-          </button>
+          {collapsed ? (
+            <button
+              onClick={signOut}
+              className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <IconLogout />
+            </button>
+          ) : (
+            <button
+              onClick={signOut}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <IconLogout /> Sign out
+            </button>
+          )}
         </div>
       </aside>
 

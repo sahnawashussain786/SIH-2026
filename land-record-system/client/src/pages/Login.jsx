@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
@@ -48,7 +48,19 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  // Friendly notice after an automatic sign-out (inactivity / token expiry).
+  const sessionExpired = Boolean(location.state?.sessionExpired);
+  useEffect(() => {
+    if (sessionExpired) {
+      toast.info(
+        "You were signed out after 6 hours of inactivity. Please sign in again.",
+        { title: "Session ended", duration: 8000 },
+      );
+      // Clear the state so reloading doesn't repeat the toast.
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();

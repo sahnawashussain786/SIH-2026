@@ -18,6 +18,8 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401 && !err.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('lrs_token');
+      // Let AuthContext drop the in-memory user so all guarded views release.
+      window.dispatchEvent(new Event('lrs:force-logout'));
       if (window.location.pathname !== '/login') window.location.href = '/login';
     }
     return Promise.reject(err);

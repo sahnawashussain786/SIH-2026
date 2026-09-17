@@ -10,10 +10,21 @@ const ROLE_LABELS = {
   citizen: 'Citizen',
 };
 
+const TOKEN_TTL = process.env.JWT_EXPIRES_IN || '6h';
+
 export function signToken(user) {
   return jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET || 'dev-secret', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: TOKEN_TTL,
   });
+}
+
+/** Decode without verifying — used to read exp for session-expiry UX */
+export function decodeToken(token) {
+  try {
+    return jwt.decode(token);
+  } catch {
+    return null;
+  }
 }
 
 /** Verify JWT and attach req.user */
@@ -32,6 +43,9 @@ export async function protect(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Your session has expired. Please log in again.', code: 'TOKEN_EXPIRED' });
+    }
     return res.status(401).json({ message: 'Invalid or expired token.' });
   }
 }
