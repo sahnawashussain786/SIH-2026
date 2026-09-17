@@ -131,15 +131,31 @@ stamps overlapping text, missing sections)."""
 
 
 FIELDS = [
-    "ownerName", "fatherName", "khatianNumber", "plotNumber", "surveyNumber",
-    "area", "areaUnit", "village", "tehsil", "district", "state",
-    "landType", "mutationDetails",
+    "ownerName",
+    "fatherName",
+    "khatianNumber",
+    "plotNumber",
+    "surveyNumber",
+    "area",
+    "areaUnit",
+    "village",
+    "tehsil",
+    "district",
+    "state",
+    "landType",
+    "mutationDetails",
 ]
 
 _MIME = {
-    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-    ".webp": "image/webp", ".bmp": "image/bmp", ".tif": "image/tiff",
-    ".tiff": "image/tiff", ".gif": "image/gif", ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".bmp": "image/bmp",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
+    ".gif": "image/gif",
+    ".pdf": "application/pdf",
 }
 
 
@@ -176,8 +192,17 @@ def _is_retryable(err: Exception) -> bool:
     """
     msg = str(err).lower()
     network = ("getaddrinfo", "temporary failure", "connection", "timed out", "timeout")
-    http_transient = ("503", "429", "500", "unavailable", "resource_exhausted",
-                      "rate limit", "overloaded", "high demand", "internal error")
+    http_transient = (
+        "503",
+        "429",
+        "500",
+        "unavailable",
+        "resource_exhausted",
+        "rate limit",
+        "overloaded",
+        "high demand",
+        "internal error",
+    )
     return any(t in msg for t in network + http_transient)
 
 
@@ -204,14 +229,20 @@ def _typed_parts(parts: list) -> list:
         elif "inline_data" in p:
             d = p["inline_data"]
             typed.append(
-                gtypes.Part(inline_data=gtypes.Blob(mime_type=d.get("mime_type"), data=d.get("data")))
+                gtypes.Part(
+                    inline_data=gtypes.Blob(
+                        mime_type=d.get("mime_type"), data=d.get("data")
+                    )
+                )
             )
         else:
             typed.append(gtypes.Part(**p))
     return typed
 
 
-def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = None) -> str:
+def _call_once(
+    parts: list, temperature: float = 0.0, deadline: float | None = None
+) -> str:
     """Walk the model chain with limited per-model retries.
 
     Retry policy per model: 2 attempts with a 2s pause. Transient errors
@@ -228,7 +259,9 @@ def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = N
 
         config = gtypes.GenerateContentConfig(
             temperature=temperature,
-            automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(disable=True),
+            automatic_function_calling=gtypes.AutomaticFunctionCallingConfig(
+                disable=True
+            ),
         )
         content = gtypes.Content(role="user", parts=_typed_parts(parts))
         candidates = [GEMINI_MODEL] + [m for m in FALLBACK_MODELS if m != GEMINI_MODEL]
@@ -247,7 +280,11 @@ def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = N
                     last_err = e
                     msg = str(e)
                     if not _is_retryable(e):
-                        if "404" in msg or "NOT_FOUND" in msg or "no longer available" in msg.lower():
+                        if (
+                            "404" in msg
+                            or "NOT_FOUND" in msg
+                            or "no longer available" in msg.lower()
+                        ):
                             break  # retired model — try the next one now
                         raise  # bad key / bad request — no point retrying
                     if deadline is not None and time.time() > deadline:
@@ -256,12 +293,16 @@ def _call_once(parts: list, temperature: float = 0.0, deadline: float | None = N
                         time.sleep(2)  # let the capacity spike pass
         raise last_err  # type: ignore[misc]
     # legacy google.generativeai SDK
-    resp = _MODEL.generate_content(parts, generation_config={"temperature": temperature})
+    resp = _MODEL.generate_content(
+        parts, generation_config={"temperature": temperature}
+    )
     globals()["_ACTIVE_MODEL"] = GEMINI_MODEL
     return resp.text or ""
 
 
-def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
+def gemini_extract_image(
+    data: bytes, suffix: str
+) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
     """Send an image/PDF straight to Gemini (it does its own OCR).
 
     Returns (fields, field_confidences, overall_confidence, warnings, lang_info).
@@ -272,10 +313,12 @@ def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list
         return {}, [], 0.0, ["Gemini not available"], lang_info
     mime = _MIME.get(suffix, "image/png")
     try:
-        raw = _call([
-            {"inline_data": {"mime_type": mime, "data": _b64(data)}},
-            {"text": _prompt_with_fields()},
-        ])
+        raw = _call(
+            [
+                {"inline_data": {"mime_type": mime, "data": _b64(data)}},
+                {"text": _prompt_with_fields()},
+            ]
+        )
     except Exception as e:
         return {}, [], 0.0, [f"Gemini call failed: {e}"], lang_info
 
@@ -299,12 +342,16 @@ def gemini_extract_image(data: bytes, suffix: str) -> tuple[dict[str, str], list
             continue
         c = float(conf_map.get(f, 80))
         confs.append(c)
-        field_confidences.append({"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)})
+        field_confidences.append(
+            {"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)}
+        )
     overall = round(sum(confs) / len(confs), 1) if confs else 0.0
     return fields, field_confidences, overall, warnings, lang_info
 
 
-def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
+def gemini_extract_text(
+    text: str,
+) -> tuple[dict[str, str], list[dict], float, list[str], dict]:
     """Extract fields from already-OCR'd/embedded text via Gemini.
 
     Returns (fields, field_confidences, overall_confidence, warnings, lang_info).
@@ -314,9 +361,11 @@ def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, l
     if not gemini_available() or not text.strip():
         return {}, [], 0.0, ["Gemini not available"], lang_info
     try:
-        raw = _call([
-            {"text": _prompt_with_fields() + "\n\nDOCUMENT TEXT:\n" + text[:24000]},
-        ])
+        raw = _call(
+            [
+                {"text": _prompt_with_fields() + "\n\nDOCUMENT TEXT:\n" + text[:24000]},
+            ]
+        )
     except Exception as e:
         return {}, [], 0.0, [f"Gemini call failed: {e}"], lang_info
 
@@ -329,14 +378,18 @@ def gemini_extract_text(text: str) -> tuple[dict[str, str], list[dict], float, l
             continue
         c = float(conf_map.get(f, 80))
         confs.append(c)
-        field_confidences.append({"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)})
+        field_confidences.append(
+            {"field": f, "value": v[:120], "confidence": round(max(0, min(100, c)), 1)}
+        )
     overall = round(sum(confs) / len(confs), 1) if confs else 0.0
     return fields, field_confidences, overall, warnings, lang_info
 
 
 def _split_parsed(parsed: dict, want_lang: bool = False):
     fields = {k: str(parsed.get(k, "") or "") for k in FIELDS}
-    conf_map = parsed.get("confidence") if isinstance(parsed.get("confidence"), dict) else {}
+    conf_map = (
+        parsed.get("confidence") if isinstance(parsed.get("confidence"), dict) else {}
+    )
     notes = str(parsed.get("notes", "") or "")
     lang_info = {
         "language": str(parsed.get("documentLanguage", "") or "").strip().lower(),
@@ -349,4 +402,5 @@ def _split_parsed(parsed: dict, want_lang: bool = False):
 
 def _b64(data: bytes) -> str:
     import base64
+
     return base64.b64encode(data).decode("ascii")
