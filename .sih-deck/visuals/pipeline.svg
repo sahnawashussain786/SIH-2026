@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="600" fill="#FFFFFF"/>
+  <text x="60" y="54" font-size="28" font-weight="bold" fill="#1A1A1A" letter-spacing="2">BHOOMI-AI — PROCESSING PIPELINE</text>
+  <rect x="60" y="66" width="150" height="5" fill="#F59E0B"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <!-- stage 1: document -->
+  <g transform="translate(105,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-34" y="-46" width="68" height="8" rx="4" fill="#0E7490"/>
+    <line x1="-34" y1="-22" x2="34" y2="-22" stroke="#CBD5E1" stroke-width="5"/>
+    <line x1="-34" y1="-4" x2="34" y2="-4" stroke="#CBD5E1" stroke-width="5"/>
+    <line x1="-34" y1="14" x2="20" y2="14" stroke="#CBD5E1" stroke-width="5"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">UPLOAD</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">deed · map · PDF</text>
+  </g>
+  <line x1="175" y1="300" x2="235" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 2: enhance -->
+  <g transform="translate(315,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2.5"/>
+    <path d="M-44 46 L44 46 L30 -46 L-30 -46 Z" fill="#FFFFFF" stroke="#15803D" stroke-width="2"/>
+    <path d="M-30 -20 L30 -20 M-33 0 L33 0 M-36 20 L36 20" stroke="#15803D" stroke-width="3" opacity="0.7"/>
+    <path d="M-38 -52 L-24 -40 M-14 -56 L-14 -42 M12 -56 L12 -42 M30 -52 L24 -40" stroke="#F59E0B" stroke-width="3"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">ENHANCE</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">deskew · denoise</text>
+  </g>
+  <line x1="385" y1="300" x2="445" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 3: OCR -->
+  <g transform="translate(525,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#E6F4F7" stroke="#0E7490" stroke-width="2.5"/>
+    <circle cx="0" cy="-8" r="26" fill="none" stroke="#0E7490" stroke-width="4"/>
+    <line x1="18" y1="10" x2="34" y2="26" stroke="#0E7490" stroke-width="5"/>
+    <line x1="-16" y1="-14" x2="16" y2="-14" stroke="#0E7490" stroke-width="3"/>
+    <line x1="-16" y1="-2" x2="10" y2="-2" stroke="#0E7490" stroke-width="3"/>
+    <text x="0" y="60" text-anchor="middle" font-size="15" font-weight="bold" fill="#0E7490">OCR</text>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">EXTRACT</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">multilingual</text>
+  </g>
+  <line x1="595" y1="300" x2="655" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 4: NLP classify -->
+  <g transform="translate(735,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#E6F4F7" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-32" y="-48" width="64" height="26" rx="5" fill="#0E7490"/>
+    <text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">OWNER</text>
+    <rect x="-32" y="-14" width="64" height="26" rx="5" fill="#0E7490" opacity="0.8"/>
+    <text x="0" y="4" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">SURVEY</text>
+    <rect x="-32" y="20" width="64" height="26" rx="5" fill="#F59E0B"/>
+    <text x="0" y="38" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">AREA</text>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">CLASSIFY</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">NLP fields</text>
+  </g>
+  <line x1="805" y1="300" x2="865" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 5: validate -->
+  <g transform="translate(945,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <path d="M0 -46 L34 -32 V-6 C34 16 0 34 0 34 C0 34 -34 16 -34 -6 V-32 Z" fill="#0E7490"/>
+    <path d="M-14 -4 L-4 8 L16 -14" stroke="#FFFFFF" stroke-width="5" fill="none"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">VALIDATE</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">rules · cross-check</text>
+  </g>
+  <line x1="1015" y1="300" x2="1075" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 6: human verify -->
+  <g transform="translate(1155,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#FFF7E6" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="0" cy="-26" r="16" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M-28 28 c0 -20 12 -30 28 -30 s28 10 28 30" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M18 -34 l10 10 20 -22" stroke="#15803D" stroke-width="6" fill="none" transform="translate(0,-2)"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">HUMAN REVIEW</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">low confidence only</text>
+  </g>
+  <line x1="1225" y1="300" x2="1285" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 7: dashboard -->
+  <g transform="translate(1375,300)">
+    <rect x="-62" y="-70" width="124" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-44" y="-52" width="88" height="56" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <rect x="-36" y="-16" width="14" height="12" fill="#0E7490"/>
+    <rect x="-16" y="-28" width="14" height="24" fill="#F59E0B"/>
+    <rect x="4" y="-38" width="14" height="34" fill="#0E7490" opacity="0.8"/>
+    <rect x="24" y="-22" width="14" height="18" fill="#15803D"/>
+    <rect x="-44" y="14" width="88" height="8" rx="4" fill="#E2E8F0"/>
+    <rect x="-44" y="30" width="60" height="8" rx="4" fill="#E2E8F0"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">DASHBOARDS</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">citizens · officers</text>
+  </g>
+
+  <!-- confidence split note -->
+  <g transform="translate(1050,470)">
+    <rect x="-190" y="-24" width="380" height="48" rx="24" fill="#FFF7E6" stroke="#F59E0B"/>
+    <text x="0" y="6" text-anchor="middle" font-size="15" fill="#B45309" font-weight="bold">High confidence → auto-save      Low confidence → review queue</text>
+  </g>
+</svg>

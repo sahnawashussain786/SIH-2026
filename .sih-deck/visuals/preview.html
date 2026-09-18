@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BHOOMI-AI — 2D Visuals</title>
+<style>
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #F1F5F9; color: #1A1A1A; }
+  header { background: #0F172A; color: #fff; padding: 18px 28px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+  header p { margin: 4px 0 0; font-size: 13px; color: #94A3B8; }
+  main { max-width: 1300px; margin: 28px auto; padding: 0 20px; }
+  section { background: #fff; border-radius: 14px; padding: 18px; margin-bottom: 28px; box-shadow: 0 1px 4px rgba(15,23,42,0.08); }
+  h2 { margin: 0 0 4px; font-size: 17px; letter-spacing: 1px; }
+  .meta { color: #64748B; font-size: 13px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>BHOOMI-AI — 2D VISUALS</h1>
+  <p>Vector graphics · drop-in ready for slides 3–5</p>
+</header>
+<main>
+
+  <section>
+    <h2>1 · TECHNICAL APPROACH — System Architecture</h2>
+    <div class="meta">technical-approach.svg — inline vector</div>
+    <svg style="width:100%;height:auto;border:1px solid #E2E8F0;border-radius:8px;display:block" xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+  <text x="60" y="58" font-size="30" font-weight="bold" fill="#1A1A1A" letter-spacing="2">BHOOMI-AI — SYSTEM ARCHITECTURE</text>
+  <rect x="60" y="72" width="150" height="5" fill="#F59E0B"/>
+
+  <!-- CLIENT LAYER -->
+  <text x="60" y="130" font-size="17" font-weight="bold" fill="#0E7490" letter-spacing="2">CLIENT LAYER</text>
+  <g>
+    <rect x="400" y="100" width="800" height="185" rx="14" fill="#F8FAFC" stroke="#0E7490" stroke-width="2"/>
+    <rect x="400" y="100" width="800" height="34" rx="14" fill="#E2E8F0"/>
+    <rect x="400" y="120" width="800" height="14" fill="#E2E8F0"/>
+    <circle cx="424" cy="117" r="6" fill="#F87171"/><circle cx="446" cy="117" r="6" fill="#FBBF24"/><circle cx="468" cy="117" r="6" fill="#34D399"/>
+    <rect x="420" y="150" width="150" height="115" rx="8" fill="#0E7490"/>
+    <rect x="434" y="168" width="90" height="10" rx="5" fill="#FFFFFF" opacity="0.9"/>
+    <rect x="434" y="190" width="120" height="8" rx="4" fill="#FFFFFF" opacity="0.6"/>
+    <rect x="434" y="208" width="100" height="8" rx="4" fill="#FFFFFF" opacity="0.6"/>
+    <rect x="434" y="226" width="110" height="8" rx="4" fill="#FFFFFF" opacity="0.6"/>
+    <rect x="590" y="150" width="280" height="70" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <rect x="608" y="196" width="22" height="14" fill="#0E7490"/>
+    <rect x="638" y="182" width="22" height="28" fill="#0E7490" opacity="0.85"/>
+    <rect x="668" y="168" width="22" height="42" fill="#F59E0B"/>
+    <rect x="698" y="188" width="22" height="22" fill="#0E7490" opacity="0.7"/>
+    <rect x="728" y="158" width="22" height="52" fill="#0E7490" opacity="0.55"/>
+    <polyline points="890,205 920,185 950,192 980,168 1010,175 1040,158" fill="none" stroke="#15803D" stroke-width="3"/>
+    <rect x="890" y="150" width="160" height="24" rx="6" fill="#E6F4F7"/>
+    <text x="900" y="167" font-size="13" fill="#0E7490" font-weight="bold">RECORDS</text>
+    <rect x="590" y="232" width="280" height="33" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <rect x="604" y="244" width="180" height="9" rx="4" fill="#CBD5E1"/>
+    <circle cx="846" cy="248" r="9" fill="#F59E0B"/>
+    <rect x="890" y="232" width="160" height="33" rx="8" fill="#E6F4F7"/>
+    <text x="900" y="253" font-size="13" fill="#0E7490" font-weight="bold">VERIFIED</text>
+    <text x="1078" y="205" font-size="46" fill="#CBD5E1">⌕</text>
+    <text x="950" y="272" font-size="0"> </text>
+  </g>
+  <text x="1220" y="200" font-size="15" fill="#64748B">React.js · Tailwind</text>
+  <text x="1220" y="224" font-size="15" fill="#64748B">Role dashboards</text>
+
+  <!-- arrows client <-> api -->
+  <g stroke="#0E7490" stroke-width="4" fill="#0E7490">
+    <line x1="770" y1="290" x2="770" y2="345"/><polygon points="770,355 761,340 779,340"/>
+    <line x1="830" y1="355" x2="830" y2="300"/><polygon points="830,290 839,305 821,305"/>
+  </g>
+  <text x="856" y="318" font-size="13" fill="#64748B">HTTPS / JSON</text>
+
+  <!-- API LAYER -->
+  <text x="60" y="405" font-size="17" font-weight="bold" fill="#F59E0B" letter-spacing="2">API LAYER</text>
+  <rect x="300" y="365" width="1000" height="115" rx="14" fill="#FFF7E6" stroke="#F59E0B" stroke-width="2"/>
+  <g transform="translate(390,422)">
+    <g fill="#F59E0B">
+      <rect x="-9" y="-46" width="18" height="14" rx="3"/><rect x="-9" y="32" width="18" height="14" rx="3"/>
+      <rect x="-46" y="-9" width="14" height="18" rx="3"/><rect x="32" y="-9" width="14" height="18" rx="3"/>
+      <rect x="-7" y="-40" width="14" height="14" rx="3" transform="rotate(45)"/>
+      <rect x="-7" y="26" width="14" height="14" rx="3" transform="rotate(45)"/>
+    </g>
+    <circle r="30" fill="#F59E0B"/>
+    <circle r="13" fill="#FFFFFF"/>
+  </g>
+  <text x="470" y="412" font-size="22" font-weight="bold" fill="#1A1A1A">Node.js + Express.js REST API</text>
+  <text x="470" y="440" font-size="14" fill="#64748B">Auth · Documents · Records · Verification · Dashboards</text>
+  <g>
+    <rect x="1090" y="388" width="180" height="30" rx="15" fill="#FFFFFF" stroke="#F59E0B"/>
+    <path d="M1108 395 l9 -6 9 6 v8 c0 6 -9 10 -9 10 s-9 -4 -9 -10 z" fill="#F59E0B"/>
+    <text x="1136" y="408" font-size="13" fill="#B45309" font-weight="bold">JWT SESSIONS</text>
+    <rect x="1090" y="428" width="180" height="30" rx="15" fill="#FFFFFF" stroke="#F59E0B"/>
+    <path d="M1102 443 h20 M1102 443 l5 -5 M1102 443 l5 5" stroke="#F59E0B" stroke-width="3" fill="none"/>
+    <text x="1136" y="448" font-size="13" fill="#B45309" font-weight="bold">AUDIT LOG</text>
+  </g>
+
+  <!-- arrows api to services -->
+  <g stroke="#0E7490" stroke-width="4" fill="#0E7490">
+    <line x1="360" y1="480" x2="360" y2="525"/><polygon points="360,535 351,520 369,520"/>
+    <line x1="800" y1="480" x2="800" y2="525"/><polygon points="800,535 791,520 809,520"/>
+    <line x1="1240" y1="480" x2="1240" y2="525"/><polygon points="1240,535 1231,520 1249,520"/>
+  </g>
+
+  <!-- SERVICES -->
+  <text x="60" y="560" font-size="17" font-weight="bold" fill="#15803D" letter-spacing="2">SERVICES</text>
+
+  <!-- AI engine -->
+  <rect x="170" y="545" width="380" height="230" rx="14" fill="#F8FAFC" stroke="#0E7490" stroke-width="2"/>
+  <g transform="translate(250,615)">
+    <rect x="-38" y="-38" width="76" height="76" rx="14" fill="#0E7490"/>
+    <path d="M-18 -16 h10 M8 -16 h10 M-18 16 h10 M8 16 h10 M-16 -16 v-14 h32 v14 M-16 16 v14 h32 v-14 M-16 -16 v32 M16 -16 v32" stroke="#FFFFFF" stroke-width="3.5" fill="none"/>
+    <circle cx="0" cy="0" r="7" fill="#F59E0B"/>
+  </g>
+  <text x="310" y="598" font-size="19" font-weight="bold" fill="#1A1A1A">AI ENGINE</text>
+  <g font-size="13" font-weight="bold" fill="#0E7490">
+    <rect x="310" y="618" width="86" height="28" rx="14" fill="#E6F4F7"/><text x="330" y="637">OCR</text>
+    <rect x="404" y="618" width="72" height="28" rx="14" fill="#E6F4F7"/><text x="422" y="637">NLP</text>
+    <rect x="484" y="618" width="58" height="28" rx="14" fill="#E6F4F7"/><text x="494" y="637">CV</text>
+  </g>
+  <text x="192" y="690" font-size="14" fill="#64748B">Tesseract · Google Vision</text>
+  <text x="192" y="714" font-size="14" fill="#64748B">spaCy · HuggingFace · OpenCV</text>
+  <text x="192" y="744" font-size="13" fill="#94A3B8">Pre-process → Extract → Classify</text>
+
+  <!-- verification -->
+  <rect x="610" y="545" width="380" height="230" rx="14" fill="#FFF7E6" stroke="#F59E0B" stroke-width="2"/>
+  <g transform="translate(690,615)">
+    <circle cx="0" cy="-14" r="15" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M-24 26 c0 -18 10 -26 24 -26 s24 8 24 26" fill="none" stroke="#F59E0B" stroke-width="4"/>
+  </g>
+  <g transform="translate(748,600)">
+    <path d="M-16 0 l-12 -14 6 -6 8 9 16 -18 7 6 z" fill="#15803D"/>
+    <circle r="22" fill="none" stroke="#15803D" stroke-width="3.5"/>
+  </g>
+  <text x="780" y="598" font-size="19" font-weight="bold" fill="#1A1A1A">VERIFICATION</text>
+  <text x="780" y="624" font-size="14" fill="#64748B">Human-in-the-loop</text>
+  <text x="632" y="690" font-size="14" fill="#64748B">Confidence scoring on every field</text>
+  <text x="632" y="714" font-size="14" fill="#64748B">Low confidence → officer review</text>
+  <text x="632" y="744" font-size="13" fill="#94A3B8">Immutable audit trail</text>
+
+  <!-- databases -->
+  <rect x="1050" y="545" width="380" height="230" rx="14" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <g transform="translate(1130,610)">
+    <ellipse cx="0" cy="-30" rx="34" ry="12" fill="#15803D"/>
+    <path d="M-34 -30 v56 c0 7 15 12 34 12 s34 -5 34 -12 v-56" fill="#15803D"/>
+    <path d="M-34 -14 c0 7 15 12 34 12 s34 -5 34 -12 M-34 2 c0 7 15 12 34 12 s34 -5 34 -12" stroke="#FFFFFF" stroke-width="3" fill="none"/>
+  </g>
+  <text x="1190" y="598" font-size="19" font-weight="bold" fill="#1A1A1A">DATABASES</text>
+  <text x="1190" y="624" font-size="14" fill="#64748B">MongoDB</text>
+  <text x="1072" y="690" font-size="14" fill="#64748B">Structured land records</text>
+  <text x="1072" y="714" font-size="14" fill="#64748B">Documents &amp; users</text>
+  <text x="1072" y="744" font-size="13" fill="#94A3B8">Cross-check validation</text>
+
+  <!-- bottom caption -->
+  <rect x="170" y="812" width="1260" height="52" rx="10" fill="#F1F5F9"/>
+  <text x="800" y="845" font-size="16" fill="#334155" text-anchor="middle" font-weight="bold">Upload → Enhance → OCR Extract → NLP Classify → Validate → Human Review → Dashboards / APIs</text>
+</svg>
+
+  </section>
+
+  <section>
+    <h2>2 · TECHNICAL APPROACH — Processing Pipeline</h2>
+    <div class="meta">pipeline.svg — inline vector</div>
+    <svg style="width:100%;height:auto;border:1px solid #E2E8F0;border-radius:8px;display:block" xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="600" fill="#FFFFFF"/>
+  <text x="60" y="54" font-size="28" font-weight="bold" fill="#1A1A1A" letter-spacing="2">BHOOMI-AI — PROCESSING PIPELINE</text>
+  <rect x="60" y="66" width="150" height="5" fill="#F59E0B"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <!-- stage 1: document -->
+  <g transform="translate(105,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-34" y="-46" width="68" height="8" rx="4" fill="#0E7490"/>
+    <line x1="-34" y1="-22" x2="34" y2="-22" stroke="#CBD5E1" stroke-width="5"/>
+    <line x1="-34" y1="-4" x2="34" y2="-4" stroke="#CBD5E1" stroke-width="5"/>
+    <line x1="-34" y1="14" x2="20" y2="14" stroke="#CBD5E1" stroke-width="5"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">UPLOAD</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">deed · map · PDF</text>
+  </g>
+  <line x1="175" y1="300" x2="235" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 2: enhance -->
+  <g transform="translate(315,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2.5"/>
+    <path d="M-44 46 L44 46 L30 -46 L-30 -46 Z" fill="#FFFFFF" stroke="#15803D" stroke-width="2"/>
+    <path d="M-30 -20 L30 -20 M-33 0 L33 0 M-36 20 L36 20" stroke="#15803D" stroke-width="3" opacity="0.7"/>
+    <path d="M-38 -52 L-24 -40 M-14 -56 L-14 -42 M12 -56 L12 -42 M30 -52 L24 -40" stroke="#F59E0B" stroke-width="3"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">ENHANCE</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">deskew · denoise</text>
+  </g>
+  <line x1="385" y1="300" x2="445" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 3: OCR -->
+  <g transform="translate(525,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#E6F4F7" stroke="#0E7490" stroke-width="2.5"/>
+    <circle cx="0" cy="-8" r="26" fill="none" stroke="#0E7490" stroke-width="4"/>
+    <line x1="18" y1="10" x2="34" y2="26" stroke="#0E7490" stroke-width="5"/>
+    <line x1="-16" y1="-14" x2="16" y2="-14" stroke="#0E7490" stroke-width="3"/>
+    <line x1="-16" y1="-2" x2="10" y2="-2" stroke="#0E7490" stroke-width="3"/>
+    <text x="0" y="60" text-anchor="middle" font-size="15" font-weight="bold" fill="#0E7490">OCR</text>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">EXTRACT</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">multilingual</text>
+  </g>
+  <line x1="595" y1="300" x2="655" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 4: NLP classify -->
+  <g transform="translate(735,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#E6F4F7" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-32" y="-48" width="64" height="26" rx="5" fill="#0E7490"/>
+    <text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">OWNER</text>
+    <rect x="-32" y="-14" width="64" height="26" rx="5" fill="#0E7490" opacity="0.8"/>
+    <text x="0" y="4" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">SURVEY</text>
+    <rect x="-32" y="20" width="64" height="26" rx="5" fill="#F59E0B"/>
+    <text x="0" y="38" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">AREA</text>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">CLASSIFY</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">NLP fields</text>
+  </g>
+  <line x1="805" y1="300" x2="865" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 5: validate -->
+  <g transform="translate(945,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <path d="M0 -46 L34 -32 V-6 C34 16 0 34 0 34 C0 34 -34 16 -34 -6 V-32 Z" fill="#0E7490"/>
+    <path d="M-14 -4 L-4 8 L16 -14" stroke="#FFFFFF" stroke-width="5" fill="none"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">VALIDATE</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">rules · cross-check</text>
+  </g>
+  <line x1="1015" y1="300" x2="1075" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 6: human verify -->
+  <g transform="translate(1155,300)">
+    <rect x="-52" y="-70" width="104" height="140" rx="10" fill="#FFF7E6" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="0" cy="-26" r="16" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M-28 28 c0 -20 12 -30 28 -30 s28 10 28 30" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M18 -34 l10 10 20 -22" stroke="#15803D" stroke-width="6" fill="none" transform="translate(0,-2)"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">HUMAN REVIEW</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">low confidence only</text>
+  </g>
+  <line x1="1225" y1="300" x2="1285" y2="300" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- stage 7: dashboard -->
+  <g transform="translate(1375,300)">
+    <rect x="-62" y="-70" width="124" height="140" rx="10" fill="#F8FAFC" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="-44" y="-52" width="88" height="56" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <rect x="-36" y="-16" width="14" height="12" fill="#0E7490"/>
+    <rect x="-16" y="-28" width="14" height="24" fill="#F59E0B"/>
+    <rect x="4" y="-38" width="14" height="34" fill="#0E7490" opacity="0.8"/>
+    <rect x="24" y="-22" width="14" height="18" fill="#15803D"/>
+    <rect x="-44" y="14" width="88" height="8" rx="4" fill="#E2E8F0"/>
+    <rect x="-44" y="30" width="60" height="8" rx="4" fill="#E2E8F0"/>
+    <text x="0" y="112" text-anchor="middle" font-size="19" font-weight="bold" fill="#1A1A1A">DASHBOARDS</text>
+    <text x="0" y="136" text-anchor="middle" font-size="13" fill="#64748B">citizens · officers</text>
+  </g>
+
+  <!-- confidence split note -->
+  <g transform="translate(1050,470)">
+    <rect x="-190" y="-24" width="380" height="48" rx="24" fill="#FFF7E6" stroke="#F59E0B"/>
+    <text x="0" y="6" text-anchor="middle" font-size="15" fill="#B45309" font-weight="bold">High confidence → auto-save      Low confidence → review queue</text>
+  </g>
+</svg>
+
+  </section>
+
+  <section>
+    <h2>3 · FEASIBILITY AND VIABILITY (redesigned)</h2>
+    <div class="meta">feasibility.svg — inline vector</div>
+    <svg style="width:100%;height:auto;border:1px solid #E2E8F0;border-radius:8px;display:block" xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+  <text x="60" y="58" font-size="30" font-weight="bold" fill="#1A1A1A" letter-spacing="2">BHOOMI-AI — FEASIBILITY &amp; VIABILITY</text>
+  <rect x="60" y="72" width="150" height="5" fill="#F59E0B"/>
+
+  <!-- ═══════════ LEFT HALF: BALANCE SCALE ═══════════ -->
+  <!-- pillar -->
+  <rect x="392" y="290" width="26" height="330" fill="#334155"/>
+  <rect x="330" y="620" width="150" height="18" rx="6" fill="#334155"/>
+
+  <!-- beam (tilted: right side heavier = solution wins) -->
+  <g transform="rotate(-9 405 285)">
+    <rect x="105" y="276" width="600" height="14" rx="7" fill="#1E293B"/>
+  </g>
+  <!-- fulcrum cap -->
+  <circle cx="405" cy="283" r="16" fill="#F59E0B"/>
+
+  <!-- LEFT PAN: challenges (up = lighter) -->
+  <g>
+    <!-- strings -->
+    <line x1="170" y1="296" x2="230" y2="415" stroke="#94A3B8" stroke-width="3"/>
+    <line x1="170" y1="296" x2="110" y2="415" stroke="#94A3B8" stroke-width="3"/>
+    <!-- pan -->
+    <path d="M40 415 H300 A130 130 0 0 1 40 415 Z" fill="#F1F5F9" stroke="#B91C1C" stroke-width="3"/>
+    <!-- messy paper pile -->
+    <g transform="translate(170,352)">
+      <rect x="-78" y="-24" width="72" height="46" rx="4" fill="#E2E8F0" stroke="#CBD5E1" transform="rotate(-14)"/>
+      <rect x="-24" y="-30" width="72" height="48" rx="4" fill="#CBD5E1" stroke="#94A3B8" transform="rotate(7)"/>
+      <rect x="26" y="-24" width="64" height="42" rx="4" fill="#E2E8F0" stroke="#CBD5E1" transform="rotate(-4)"/>
+      <path d="M-34 -6 l10 8 M44 -14 l8 10" stroke="#94A3B8" stroke-width="2.5"/>
+    </g>
+    <!-- warning sparks -->
+    <g fill="#B91C1C" font-weight="bold">
+      <circle cx="70" cy="330" r="13"/><text x="70" y="336" text-anchor="middle" font-size="16" fill="#FFFFFF">!</text>
+      <circle cx="268" cy="318" r="13"/><text x="268" y="324" text-anchor="middle" font-size="16" fill="#FFFFFF">!</text>
+    </g>
+    <!-- labels under pan -->
+    <text x="170" y="580" text-anchor="middle" font-size="19" font-weight="bold" fill="#B91C1C" letter-spacing="1">CHALLENGES</text>
+    <g font-size="14.5" fill="#334155" text-anchor="middle">
+      <text x="170" y="608">Faded scans · mixed scripts</text>
+      <text x="170" y="630">Legacy LRMS integration</text>
+    </g>
+  </g>
+
+  <!-- RIGHT PAN: solution (down = heavier) -->
+  <g>
+    <line x1="640" y1="240" x2="700" y2="360" stroke="#94A3B8" stroke-width="3"/>
+    <line x1="640" y1="240" x2="580" y2="360" stroke="#94A3B8" stroke-width="3"/>
+    <!-- pan -->
+    <path d="M510 360 H770 A130 130 0 0 1 510 360 Z" fill="#E6F4F7" stroke="#0E7490" stroke-width="3"/>
+    <!-- tablet with verified record -->
+    <g transform="translate(640,300)">
+      <rect x="-52" y="-36" width="104" height="72" rx="8" fill="#FFFFFF" stroke="#0E7490" stroke-width="3"/>
+      <rect x="-38" y="-20" width="42" height="7" rx="3.5" fill="#0E7490"/>
+      <rect x="-38" y="-6" width="56" height="6" rx="3" fill="#CBD5E1"/>
+      <rect x="-38" y="6" width="48" height="6" rx="3" fill="#CBD5E1"/>
+      <path d="M14 8 l9 9 16 -18" stroke="#15803D" stroke-width="5" fill="none"/>
+      <circle cx="24" cy="8" r="17" fill="none" stroke="#15803D" stroke-width="3"/>
+    </g>
+    <text x="640" y="545" text-anchor="middle" font-size="19" font-weight="bold" fill="#0E7490" letter-spacing="1">BHOOMI-AI SOLUTION</text>
+    <g font-size="14.5" fill="#334155" text-anchor="middle">
+      <text x="640" y="573">MERN + mature AI models</text>
+      <text x="640" y="595">Low-cost cloud deployment</text>
+    </g>
+    <!-- weight glow -->
+    <circle cx="640" cy="360" r="6" fill="#F59E0B"/>
+  </g>
+
+  <!-- center verdict badge -->
+  <g transform="translate(405,742)">
+    <rect x="-190" y="-30" width="380" height="60" rx="30" fill="#0E7490"/>
+    <path d="M-150 0 l11 11 22 -24" stroke="#FFFFFF" stroke-width="5" fill="none"/>
+    <text x="-100" y="7" font-size="16" font-weight="bold" fill="#FFFFFF" letter-spacing="1">SOLUTION OUTWEIGHS CHALLENGES</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="830" y1="120" x2="830" y2="780" stroke="#E2E8F0" stroke-width="3" stroke-dasharray="4 10"/>
+
+  <!-- ═══════════ RIGHT HALF: 3 MITIGATION PILLARS VIADUCT ═══════════ -->
+  <text x="900" y="130" font-size="19" font-weight="bold" fill="#0E7490" letter-spacing="2">HOW CHALLENGES ARE HANDLED</text>
+
+  <!-- road deck (the viability outcome) -->
+  <rect x="890" y="560" width="640" height="26" rx="6" fill="#1E293B"/>
+  <rect x="890" y="586" width="640" height="10" rx="4" fill="#334155"/>
+  <g fill="#F59E0B">
+    <rect x="940" y="571" width="34" height="5" rx="2"/>
+    <rect x="1020" y="571" width="34" height="5" rx="2"/>
+    <rect x="1100" y="571" width="34" height="5" rx="2"/>
+    <rect x="1180" y="571" width="34" height="5" rx="2"/>
+    <rect x="1260" y="571" width="34" height="5" rx="2"/>
+    <rect x="1340" y="571" width="34" height="5" rx="2"/>
+    <rect x="1420" y="571" width="34" height="5" rx="2"/>
+  </g>
+  <!-- car carrying record -->
+  <g transform="translate(1330,522)">
+    <rect x="-42" y="-8" width="84" height="26" rx="8" fill="#0E7490"/>
+    <path d="M-22 -8 L-10 -26 H22 L34 -8 Z" fill="#0E7490"/>
+    <rect x="-6" y="-22" width="24" height="14" rx="3" fill="#E6F4F7"/>
+    <circle cx="-24" cy="20" r="9" fill="#1E293B" stroke="#94A3B8" stroke-width="3"/>
+    <circle cx="26" cy="20" r="9" fill="#1E293B" stroke="#94A3B8" stroke-width="3"/>
+  </g>
+  <text x="1210" y="622" text-anchor="middle" font-size="16" font-weight="bold" fill="#334155">VIABLE ROAD TO DEPLOYMENT</text>
+  <text x="1210" y="644" text-anchor="middle" font-size="13.5" fill="#64748B">adoptable state-by-state · extensible to other domains</text>
+
+  <!-- pillar 1 -->
+  <g>
+    <rect x="920" y="316" width="140" height="244" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2.5"/>
+    <circle cx="990" cy="368" r="26" fill="#15803D"/>
+    <path d="M977 368 l9 9 18 -20" stroke="#FFFFFF" stroke-width="4.5" fill="none"/>
+    <text x="990" y="424" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#166534">PRE-PROCESS</text>
+    <g font-size="13" fill="#334155" text-anchor="middle">
+      <text x="990" y="448">Image enhancement</text>
+      <text x="990" y="468">Deskew · denoise</text>
+      <text x="990" y="488">Contrast restore</text>
+    </g>
+  </g>
+  <!-- pillar 2 -->
+  <g>
+    <rect x="1140" y="316" width="140" height="244" rx="10" fill="#E6F4F7" stroke="#0E7490" stroke-width="2.5"/>
+    <circle cx="1210" cy="368" r="26" fill="#0E7490"/>
+    <path d="M1196 372 l8 -12 6 8 6 -14 8 18" stroke="#FFFFFF" stroke-width="3.5" fill="none"/>
+    <circle cx="1210" cy="368" r="3.5" fill="#F59E0B"/>
+    <text x="1210" y="424" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#0E7490">AI CONFIDENCE</text>
+    <g font-size="13" fill="#334155" text-anchor="middle">
+      <text x="1210" y="448">Per-field score</text>
+      <text x="1210" y="468">Cross-DB checks</text>
+      <text x="1210" y="488">Auto-save high conf.</text>
+    </g>
+  </g>
+  <!-- pillar 3 -->
+  <g>
+    <rect x="1360" y="316" width="140" height="244" rx="10" fill="#FFF7E6" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="1430" cy="368" r="26" fill="#F59E0B"/>
+    <circle cx="1430" cy="362" r="8" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+    <path d="M1416 380 c0 -10 7 -15 14 -15 s14 5 14 15" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="1430" y="424" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#B45309">HUMAN REVIEW</text>
+    <g font-size="13" fill="#334155" text-anchor="middle">
+      <text x="1430" y="448">Officer one-click verify</text>
+      <text x="1430" y="468">Only low-confidence</text>
+      <text x="1430" y="488">Full audit trail</text>
+    </g>
+  </g>
+
+  <!-- arrows from pillars up to deck -->
+  <g stroke="#94A3B8" stroke-width="3" fill="#94A3B8">
+    <line x1="990" y1="316" x2="990" y2="296"/><polygon points="990,290 982,304 998,304"/>
+    <line x1="1210" y1="316" x2="1210" y2="296"/><polygon points="1210,290 1202,304 1218,304"/>
+    <line x1="1430" y1="316" x2="1430" y2="296"/><polygon points="1430,290 1422,304 1438,304"/>
+  </g>
+  <text x="1210" y="278" text-anchor="middle" font-size="13" fill="#94A3B8" font-style="italic">pillars carry the platform</text>
+
+  <!-- bottom strip -->
+  <rect x="60" y="812" width="1480" height="52" rx="10" fill="#F1F5F9"/>
+  <text x="800" y="845" font-size="16" fill="#334155" text-anchor="middle" font-weight="bold">FEASIBLE: proven stack + available AI models   ·   VIABLE: modular, state-by-state adoption, API-ready for LRMS/DILRMP integration</text>
+</svg>
+
+  </section>
+
+  <section>
+    <h2>4 · IMPACT AND BENEFITS (redesigned)</h2>
+    <div class="meta">impact.svg — inline vector</div>
+    <svg style="width:100%;height:auto;border:1px solid #E2E8F0;border-radius:8px;display:block" xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+  <text x="60" y="58" font-size="30" font-weight="bold" fill="#1A1A1A" letter-spacing="2">BHOOMI-AI — IMPACT &amp; BENEFITS</text>
+  <rect x="60" y="72" width="150" height="5" fill="#F59E0B"/>
+
+  <!-- ═══════════ CENTER: DONUT HUB ═══════════ -->
+  <g transform="translate(800,490)">
+    <!-- donut quadrants (4 × 90° segments) -->
+    <g>
+      <!-- top-right: governance (dark) -->
+      <path d="M 0 -150 A 150 150 0 0 1 150 0 L 96 0 A 96 96 0 0 0 0 -96 Z" fill="#1E293B"/>
+      <!-- bottom-right: economic (green) -->
+      <path d="M 150 0 A 150 150 0 0 1 0 150 L 0 96 A 96 96 0 0 0 96 0 Z" fill="#15803D"/>
+      <!-- bottom-left: environmental (teal) -->
+      <path d="M 0 150 A 150 150 0 0 1 -150 0 L -96 0 A 96 96 0 0 0 0 96 Z" fill="#0E7490"/>
+      <!-- top-left: social (amber) -->
+      <path d="M -150 0 A 150 150 0 0 1 0 -150 L 0 -96 A 96 96 0 0 0 -96 0 Z" fill="#F59E0B"/>
+    </g>
+    <!-- inner circle: the core -->
+    <circle r="96" fill="#FFFFFF"/>
+    <circle r="96" fill="none" stroke="#E2E8F0" stroke-width="2"/>
+    <!-- land parcel in core -->
+    <g transform="translate(0,-8)" stroke="#0E7490" stroke-width="3.5" fill="none">
+      <path d="M-52 -34 L10 -48 L54 -22 L44 36 L-18 48 L-56 4 Z"/>
+      <line x1="10" y1="-48" x2="-7" y2="18"/>
+      <line x1="-7" y1="18" x2="44" y2="36"/>
+      <line x1="-7" y1="18" x2="-56" y2="4"/>
+    </g>
+    <circle cx="16" cy="-22" r="6" fill="#F59E0B"/>
+    <text x="0" y="76" text-anchor="middle" font-size="14.5" font-weight="bold" fill="#1A1A1A" letter-spacing="1">VERIFIED LAND RECORDS</text>
+    <!-- subtle segment separators -->
+    <g stroke="#FFFFFF" stroke-width="5">
+      <line x1="0" y1="-150" x2="0" y2="-96"/>
+      <line x1="150" y1="0" x2="96" y2="0"/>
+      <line x1="0" y1="150" x2="0" y2="96"/>
+      <line x1="-150" y1="0" x2="-96" y2="0"/>
+    </g>
+  </g>
+
+  <!-- ═══════════ TOP-LEFT CALLOUT: SOCIAL ═══════════ -->
+  <g>
+    <line x1="708" y1="398" x2="520" y2="290" stroke="#F59E0B" stroke-width="3" stroke-dasharray="3 7"/>
+    <circle cx="520" cy="290" r="7" fill="#F59E0B"/>
+    <rect x="90" y="130" width="430" height="150" rx="16" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2.5"/>
+    <rect x="90" y="130" width="10" height="150" rx="5" fill="#F59E0B"/>
+    <g transform="translate(146,196)">
+      <path d="M-30 6 C-30 -12 -12 -16 0 -6 C12 -16 30 -12 30 6 C30 20 12 28 0 28 C-12 28 -30 20 -30 6 Z" fill="none" stroke="#F59E0B" stroke-width="3.5"/>
+      <path d="M-30 6 C-16 -6 0 2 0 2 M30 6 C16 -6 0 2 0 2" fill="none" stroke="#F59E0B" stroke-width="3.5"/>
+    </g>
+    <text x="196" y="172" font-size="19" font-weight="bold" fill="#B45309" letter-spacing="1">SOCIAL</text>
+    <g font-size="14.5" fill="#334155">
+      <text x="196" y="200">Citizen-centric land services</text>
+      <text x="196" y="224">Reduced corruption &amp; middlemen</text>
+      <text x="196" y="248">Public trust through transparency</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ TOP-RIGHT CALLOUT: GOVERNANCE ═══════════ -->
+  <g>
+    <line x1="892" y1="398" x2="1080" y2="290" stroke="#1E293B" stroke-width="3" stroke-dasharray="3 7"/>
+    <circle cx="1080" cy="290" r="7" fill="#1E293B"/>
+    <rect x="1080" y="130" width="430" height="150" rx="16" fill="#FFFFFF" stroke="#1E293B" stroke-width="2.5"/>
+    <rect x="1080" y="130" width="10" height="150" rx="5" fill="#1E293B"/>
+    <g transform="translate(1136,196)">
+      <path d="M-28 -16 L0 -30 L28 -16 Z" fill="#1E293B"/>
+      <rect x="-24" y="-12" width="48" height="5" fill="#1E293B"/>
+      <rect x="-19" y="-5" width="9" height="24" fill="#1E293B"/>
+      <rect x="-4.5" y="-5" width="9" height="24" fill="#1E293B"/>
+      <rect x="10" y="-5" width="9" height="24" fill="#1E293B"/>
+      <rect x="-24" y="21" width="48" height="6" fill="#1E293B"/>
+    </g>
+    <text x="1186" y="172" font-size="19" font-weight="bold" fill="#1E293B" letter-spacing="1">GOVERNANCE</text>
+    <g font-size="14.5" fill="#334155">
+      <text x="1186" y="200">Accurate, standardized records</text>
+      <text x="1186" y="224">Faster dispute resolution</text>
+      <text x="1186" y="248">Accountability via audit trail</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ BOTTOM-LEFT CALLOUT: ENVIRONMENTAL ═══════════ -->
+  <g>
+    <line x1="708" y1="582" x2="520" y2="690" stroke="#0E7490" stroke-width="3" stroke-dasharray="3 7"/>
+    <circle cx="520" cy="690" r="7" fill="#0E7490"/>
+    <rect x="90" y="620" width="430" height="150" rx="16" fill="#FFFFFF" stroke="#0E7490" stroke-width="2.5"/>
+    <rect x="90" y="620" width="10" height="150" rx="5" fill="#0E7490"/>
+    <g transform="translate(146,686)">
+      <path d="M0 20 C-28 20 -33 -4 -31 -22 C-10 -29 9 -20 7 1 C7 10 4 17 0 20 Z" fill="#0E7490"/>
+      <line x1="-2" y1="17" x2="-12" y2="-12" stroke="#FFFFFF" stroke-width="2.5"/>
+      <rect x="-24" y="24" width="48" height="7" rx="3" fill="#94A3B8"/>
+      <rect x="-34" y="31" width="68" height="7" rx="3" fill="#CBD5E1"/>
+    </g>
+    <text x="196" y="662" font-size="19" font-weight="bold" fill="#0E7490" letter-spacing="1">ENVIRONMENTAL</text>
+    <g font-size="14.5" fill="#334155">
+      <text x="196" y="690">Reduced paper consumption</text>
+      <text x="196" y="714">Sustainable digitization at scale</text>
+      <text x="196" y="738">Less physical storage &amp; transport</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ BOTTOM-RIGHT CALLOUT: ECONOMIC ═══════════ -->
+  <g>
+    <line x1="892" y1="582" x2="1080" y2="690" stroke="#15803D" stroke-width="3" stroke-dasharray="3 7"/>
+    <circle cx="1080" cy="690" r="7" fill="#15803D"/>
+    <rect x="1080" y="620" width="430" height="150" rx="16" fill="#FFFFFF" stroke="#15803D" stroke-width="2.5"/>
+    <rect x="1080" y="620" width="10" height="150" rx="5" fill="#15803D"/>
+    <g transform="translate(1146,686)">
+      <rect x="-30" y="4" width="14" height="24" fill="#15803D"/>
+      <rect x="-10" y="-8" width="14" height="36" fill="#15803D" opacity="0.85"/>
+      <rect x="10" y="-20" width="14" height="48" fill="#F59E0B"/>
+      <path d="M-34 -12 L-3 -26 L17 -18 L38 -34" stroke="#15803D" stroke-width="3.5" fill="none"/>
+      <path d="M38 -34 l-11 2 M38 -34 l-2 11" stroke="#15803D" stroke-width="3.5" fill="none"/>
+      <circle cx="-32" cy="-36" r="14" fill="#F59E0B"/>
+      <text x="-32" y="-30" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">₹</text>
+    </g>
+    <text x="1196" y="662" font-size="19" font-weight="bold" fill="#15803D" letter-spacing="1">ECONOMIC</text>
+    <g font-size="14.5" fill="#334155">
+      <text x="1196" y="690">Lower operational costs</text>
+      <text x="1196" y="714">Efficient property taxation</text>
+      <text x="1196" y="738">Faster transactions &amp; credit</text>
+    </g>
+  </g>
+
+  <!-- impact banner -->
+  <rect x="60" y="812" width="1480" height="52" rx="10" fill="#FFF7E6"/>
+  <text x="800" y="845" font-size="16" fill="#B45309" text-anchor="middle" font-weight="bold">IMPACT:  transparent land administration · faster dispute resolution · instant ownership verification · DILRMP-aligned</text>
+</svg>
+
+  </section>
+</main>
+</body>
+</html>
