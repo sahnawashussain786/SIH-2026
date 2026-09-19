@@ -25,6 +25,10 @@ const landRecordSchema = new mongoose.Schema(
     gis: {
       lat: { type: Number, default: null },
       lng: { type: Number, default: null },
+      displayName: { type: String, default: '' },
+      source: { type: String, default: '' }, // 'nominatim' | 'manual'
+      precision: { type: String, default: '' }, // 'exact' | 'approx'
+      geocodedAt: { type: Date, default: null },
     },
   },
   { timestamps: true }

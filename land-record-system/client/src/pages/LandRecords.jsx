@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, errMsg } from '../services/api.js';
 import Spinner from '../components/Spinner.jsx';
+import RecordMap from '../components/RecordMap.jsx';
+import RecordsMap from '../components/RecordsMap.jsx';
 import {
   IconSearch, IconChevronLeft, IconChevronRight, IconRecords, IconCheckSolid,
   IconOfficer, IconStamp, IconClose, IconPin, IconUser, IconLayers,
-  IconCalendar, IconDocument, IconApproved,
+  IconCalendar, IconDocument, IconApproved, IconMap,
 } from '../components/icons.js';
 
 const EMPTY = { q: '', district: '', village: '', landType: '' };
@@ -18,6 +20,7 @@ export default function LandRecords() {
   const [detail, setDetail] = useState(null); // full record from GET /records/:id
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
+  const [view, setView] = useState('list'); // 'list' | 'map'
 
   const load = () => {
     const params = new URLSearchParams({ page, limit: 12 });
@@ -64,6 +67,24 @@ export default function LandRecords() {
         <h1 className="page-title">Digital Land Records</h1>
         <p className="page-subtitle">Approved, verified records — click any record for its full details.</p>
       </div>      <div className="panel flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex rounded-lg bg-slate-100 p-1">
+          <button
+            onClick={() => setView('list')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <IconRecords className="text-xs" /> List
+          </button>
+          <button
+            onClick={() => setView('map')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <IconMap className="text-xs" /> Map
+          </button>
+        </div>
         <div className="relative">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -114,6 +135,14 @@ export default function LandRecords() {
 
       {error && <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
+      {view === 'map' ? (
+        <RecordsMap
+          onPick={(id) => {
+            setView('list');
+            openDetail(id);
+          }}
+        />
+      ) : (
       <div className="stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.items.map((r) => (
           <button
@@ -159,8 +188,9 @@ export default function LandRecords() {
           </div>
         )}
       </div>
+      )}
 
-      {data.pages > 1 && (
+      {data.pages > 1 && view === 'list' && (
         <div className="flex items-center justify-between">
           <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn-secondary !px-3 !py-1.5">
             <IconChevronLeft /> Prev
@@ -276,6 +306,11 @@ function RecordDetailModal({ record, loading, error, onClose }) {
                   <Row label="GIS location" value={`${record.gis.lat}, ${record.gis.lng}`} />
                 )}
               </dl>
+
+              {/* Where the land actually is */}
+              <div className="mt-4">
+                <RecordMap recordId={record._id} initial={record.gis?.lat != null ? record.gis : null} />
+              </div>
 
               {src && (
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

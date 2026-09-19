@@ -9,6 +9,7 @@ import {
   findDuplicates,
 } from "../services/validator.js";
 import { putFile, getFile, deleteFile } from "../services/fileStore.js";
+import { geocodeRecord } from "../services/geocoder.js";
 import { storedFilename } from "../middleware/upload.js";
 
 /** POST /api/documents/upload — store the file, then run the AI pipeline.
@@ -205,9 +206,9 @@ async function finalizeDocument(doc, buffer, user) {
       approvedBy: null,
       approvedAutomatically: true,
       confidence: overall,
-    });
-    doc.recordId = record._id;
-    await doc.save();
+    });      doc.recordId = record._id;
+      await doc.save();
+      geocodeRecord(record).catch(() => {}); // best-effort map pin (async, non-blocking)
   }
 
   await AuditLog.log({
